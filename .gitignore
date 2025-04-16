@@ -1,0 +1,14 @@
+test_project.py
+
+**/*.sqlite3
+**/*.db
+**/*.bin
+**/*.pickle
+
+# Ignore cache and temporary files
+**/movies_cache/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+.idea/
