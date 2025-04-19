@@ -60,25 +60,31 @@ services:
       - MONGODB_URI=mongodb://root:example@mongodb:27017/
     networks:
       - search-network
+  
+  indexer:
+    image: search-engine-indexer:latest
+    container_name: indexer
+    tty: true
+    stdin_open: true
+    depends_on:
+      - mongodb
+      - elasticsearch
+    environment:
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/
+      - ELASTICSEARCH_URI=http://elasticsearch:9200
+    networks:
+      - search-network
 
-  # Web server/API
-#  webserver:
-#    build:
-#      context: .
-#      dockerfile: docker/webserver/Dockerfile
-#    container_name: webserver
-#    depends_on:
-#      - mongodb
-#      - elasticsearch
-#    ports:
-#      - "8000:8000"
-#    volumes:
-#      - ./search-engine:/app
-#    environment:
-#      - MONGODB_URI=mongodb://root:example@mongodb:27017/
-#      - ELASTICSEARCH_URI=http://elasticsearch:9200
-#    networks:
-#      - search-network
+  webserver:
+    image: search-engine-webserver:latest
+    container_name: webserver
+    depends_on:
+      - mongodb
+      - elasticsearch
+    ports:
+      - "8000:8000"
+    networks:
+      - search-network
 
 networks:
   search-network:
