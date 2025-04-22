@@ -29,13 +29,15 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+
+WORKDIR /app
+
 # Install Poetry
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
 
 # Set working directory and copy files
 COPY pyproject.toml poetry.lock* /app/
-WORKDIR /app
 
 # Install Python dependencies
 RUN poetry install --no-root --only main,webserver
@@ -50,4 +52,4 @@ USER $USERNAME
 
 EXPOSE 8000
 
-ENTRYPOINT ["python", "webserver/search/manage.py", "runserver", "0.0.0.0:8000"]
+ENTRYPOINT ["bash", "-c", "cd /app/webserver/search && uvicorn search.asgi:application --host 0.0.0.0 --port 8000"]

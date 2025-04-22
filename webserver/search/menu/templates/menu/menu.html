@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Web Sources{% endblock %}
+
+
+{% block content %}
+
+{% load static %}
+<link rel="stylesheet" href="{% static 'menu/css/menu.css' %}">
+
+<div class="menu-page">
+    <h1 class="page-title">Web Sources</h1>
+    <p class="page-description">Click on a source to search its crawled data</p>
+    
+    <div class="sources-grid">
+        {% for source in sources %}
+        <a href="{% url source.url_name %}" class="source-card">
+            <div class="source-icon">
+                {% if source.icon %}
+                <img src="{% static source.icon %}" alt="{{ source.name }}">
+                {% else %}
+                <div class="default-icon">{{ source.name|slice:":1" }}</div>
+                {% endif %}
+            </div>
+            <h3 class="source-name">{{ source.name }}</h3>
+        </a>
+        {% empty %}
+        <div class="no-sources">
+            <p>No web sources found. Please add some sources to your crawler configuration.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'menu/js/menu.js' %}"></script>
+{% endblock %}

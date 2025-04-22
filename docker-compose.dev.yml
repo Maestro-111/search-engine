@@ -83,6 +83,8 @@ services:
       - elasticsearch
     ports:
       - "8000:8000"
+    volumes:
+      - ./webserver/search:/app/webserver/search
     networks:
       - search-network
 
