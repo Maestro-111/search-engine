@@ -12,3 +12,4 @@ test_project.py
 **/*.pyo
 
 .idea/
+collected_static/

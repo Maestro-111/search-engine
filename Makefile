@@ -1,22 +1,29 @@
 # Environment variables
 LOCAL_COMPOSE := docker-compose.dev.yml
 PROD_COMPOSE := docker-compose.prod.yml
+
+LOCAL_DEPLOY_IMAGES := deploy_all_dev.sh
+PROD_DEPLOY_IMAGES := deploy_all_prod.sh
+
 DC := docker compose --env-file .env
+BASH := /bin/bash
 
 
 .PHONY: local prod
 local:
 	$(eval COMPOSE_FILES := -f $(LOCAL_COMPOSE))
+	$(eval DEPLOY_IMAGES := $(LOCAL_DEPLOY_IMAGES))
 	@echo "🔧 Setting environment to local"
 
 prod:
 	$(eval COMPOSE_FILES := -f $(PROD_COMPOSE))
+	$(eval DEPLOY_IMAGES := $(PROD_DEPLOY_IMAGES))
 	@echo "🚀 Setting environment to production"
 
 # Docker commands
 .PHONY: build up down restart logs clean config ps
 build:
-	$(DC) $(COMPOSE_FILES) build $(ARGS)
+	$(BASH) $(DEPLOY_IMAGES)
 
 up:
 	$(DC) $(COMPOSE_FILES) up -d
