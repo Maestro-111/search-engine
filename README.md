@@ -47,3 +47,4 @@ make prod build up
 6) rewise how crawling - indexin - search pipeline should look like
 7) add celery
 8) add postgres sql
+9) add logging
