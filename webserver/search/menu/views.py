@@ -5,13 +5,16 @@ import importlib
 
 
 def index(request):
+
     """
     Menu page that displays all available web sources
     """
+
     # Get all installed apps
     all_apps = [app.name for app in apps.get_app_configs()]
 
-    # Filter for source apps (adapt this to your naming convention for source apps)
+    print(all_apps)
+
     source_apps = [app for app in all_apps if app.startswith('source_')]
 
     # Collect source metadata
@@ -25,6 +28,8 @@ def index(request):
         except (ImportError, AttributeError):
             # Skip apps that don't implement the expected interface
             continue
+
+    print(sources)
 
     # For testing, if no sources are found, add some dummy sources
     if not sources:

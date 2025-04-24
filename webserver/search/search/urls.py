@@ -21,5 +21,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("menu.urls"))
+    path("", include("menu.urls")),
+    path("wikipedia/", include("source_wikipedia.urls"))
 ]
