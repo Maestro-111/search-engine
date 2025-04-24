@@ -1,0 +1,38 @@
+{% extends 'base_search.html' %}
+{% load static %}
+
+{% block title %}Wikipedia Search{% endblock %}
+
+{% block search_css %}
+<link rel="stylesheet" href="{% static 'source_wikipedia/css/wikipedia.css' %}">
+{% endblock %}
+
+{% block search_action %}{% url 'search_wikipedia' %}{% endblock %}
+{% block search_placeholder %}Search Wikipedia...{% endblock %}
+
+{% block results %}
+{% if results %}
+<div class="wikipedia-results">
+    {% for result in results %}
+    <div class="wikipedia-article">
+        <h3><a href="{{ result.url }}" target="_blank">{{ result.title }}</a></h3>
+        <div class="article-excerpt">{{ result.excerpt|safe }}</div>
+        <div class="article-meta">
+            <div class="categories">
+                {% for category in result.categories %}
+                    <span class="category">{{ category }}</span>
+                {% empty %}
+                    <span class="category">Uncategorized</span>
+                {% endfor %}
+            </div>
+            <span class="last-updated">Updated: {{ result.last_updated }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block search_js %}
+<script src="{% static 'source_wikipedia/js/wikipedia.js' %}"></script>
+{% endblock %}

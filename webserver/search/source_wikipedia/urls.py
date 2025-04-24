@@ -2,5 +2,5 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('search_wiki/', views.search, name='wikipedia_search'),
+    path('search_wiki/', views.search_wikipedia, name='search_wikipedia'),
 ]
