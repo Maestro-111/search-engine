@@ -13,3 +13,5 @@ test_project.py
 
 .idea/
 collected_static/
+
+*.log

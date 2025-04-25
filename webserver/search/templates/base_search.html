@@ -4,10 +4,9 @@
 {% block title %}Search{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'search/css/base_search.css' %}">
+<link rel="stylesheet" href="{% static 'css/base_search.css' %}">
 {% block search_css %}{% endblock %}
 {% endblock %}
-
 {% block content %}
 <!-- Common search bar that all search apps will share -->
 
@@ -58,13 +57,17 @@
 {% endblock %}
 
 <nav class="search-nav">
-    <ul class="search-nav-links">
+    <ul class="search-nav-links primary-nav">
         <li><a href="{% url 'menu:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Home Page</a></li>
     </ul>
+
+    {% block crawl_specific %}
+    {% endblock %}
+
 </nav>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'search/js/base_search.js' %}"></script>
+<script src="{% static 'js/search.js' %}"></script>
 {% block search_js %}{% endblock %}
 {% endblock %}
