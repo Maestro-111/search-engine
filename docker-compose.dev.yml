@@ -58,6 +58,8 @@ services:
     stdin_open: true
     environment:
       - MONGODB_URI=mongodb://root:example@mongodb:27017/
+    ports:
+      - "5000:5000"
     networks:
       - search-network
   
@@ -98,6 +100,43 @@ services:
       - "80:80"
     depends_on:
       - webserver
+    networks:
+      - search-network
+
+  crawler_worker:
+    image: search-engine-crawler:latest
+    container_name: crawler_worker
+    depends_on:
+      - redis
+      - mongodb
+    environment:
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/
+      - CELERY_APP=crawler.tasks  # Specify the application path
+    command: celery -A crawler.tasks worker --loglevel=info --queues=crawler_queue
+    networks:
+      - search-network
+
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_PORT=5555
+    ports:
+      - "5555:5555"
+    networks:
+      - search-network
+
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
       - search-network
 

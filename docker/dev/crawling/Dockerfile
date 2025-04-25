@@ -25,10 +25,10 @@ RUN poetry install --no-root --only main,crawler
 # Copy the app code
 COPY crawling /app/crawling
 
-# Default environment variables
+
 ENV MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_DATABASE=wikipedia_db \
     MONGODB_COLLECTION=articles
 
-ENTRYPOINT ["/bin/bash"]
+CMD ["uvicorn", "crawler_api:app", "--host", "0.0.0.0", "--port", "5000"]
 

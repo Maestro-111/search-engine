@@ -41,10 +41,9 @@ make prod build up
 
 1) ngnix for load balance 
 2) wiki app (cont)
-3) template for search (cont)
-4) better design for menu app (cont - search bar is bad)
-5) elastic query class (implement query_specified_fields method)
-6) rewise how crawling - indexin - search pipeline should look like
-7) add celery
-8) add postgres sql
-9) add logging
+3) better design for menu app (cont - home tab spacing)
+4) elastic query class (implement query_specified_fields method)
+5) rewise how crawling - indexing - search pipeline should look like (cont)
+6) add celery
+7) add postgres sql
+8) add "custom data source" option
