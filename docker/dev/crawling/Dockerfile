@@ -30,5 +30,5 @@ ENV MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_DATABASE=wikipedia_db \
     MONGODB_COLLECTION=articles
 
-CMD ["uvicorn", "crawler_api:app", "--host", "0.0.0.0", "--port", "5000"]
+ENTRYPOINT ["/bin/bash"]
 

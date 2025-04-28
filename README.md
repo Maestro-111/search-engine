@@ -1,4 +1,4 @@
-# Search Engine App.
+# Search Engine App
 
 ## Abstract
 

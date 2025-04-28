@@ -83,6 +83,7 @@ services:
     depends_on:
       - mongodb
       - elasticsearch
+      - db
     ports:
       - "8000:8000"
     volumes:
@@ -90,6 +91,25 @@ services:
       - static_volume:/app/webserver/search/collected_static/
     networks:
       - search-network
+    command: web
+
+  webserver_worker:
+    image: search-engine-webserver:latest
+    container_name: webserver_worker
+    depends_on:
+      - redis
+      - mongodb
+      - crawler
+      - elasticsearch
+    environment:
+      - MONGODB_URI=mongodb://root:example@mongodb:27017/
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./webserver/search:/app/webserver/search
+    networks:
+      - search-network
+    command: webserver_worker
+    user: root
 
   nginx:
     image: nginx:1.25-alpine
@@ -102,20 +122,6 @@ services:
       - webserver
     networks:
       - search-network
-
-  crawler_worker:
-    image: search-engine-crawler:latest
-    container_name: crawler_worker
-    depends_on:
-      - redis
-      - mongodb
-    environment:
-      - MONGODB_URI=mongodb://root:example@mongodb:27017/
-      - CELERY_APP=crawler.tasks  # Specify the application path
-    command: celery -A crawler.tasks worker --loglevel=info --queues=crawler_queue
-    networks:
-      - search-network
-
 
   flower:
     image: mher/flower
@@ -140,6 +146,30 @@ services:
     networks:
       - search-network
 
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${db_user_name}
+      POSTGRES_PASSWORD: ${db_psw}
+      POSTGRES_DB: ${db_name}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - search-network
+      -
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - search-network
+
 networks:
   search-network:
     driver: bridge
@@ -148,3 +178,5 @@ volumes:
   mongo-data:
   elasticsearch_data:
   static_volume:
+  postgres_data:
+  redis_data:

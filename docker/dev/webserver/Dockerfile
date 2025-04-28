@@ -46,10 +46,14 @@ RUN poetry install --no-root --only main,webserver
 COPY webserver /app/webserver
 COPY .env /app/
 COPY Makefile /app/
+COPY entrypoint.sh /app/entrypoint.sh
 
 RUN chown -R $USERNAME:$USERNAME /app
+RUN chmod +x /app/entrypoint.sh
+
 USER $USERNAME
 
 EXPOSE 8000
 
-ENTRYPOINT ["bash", "-c", "cd /app/webserver/search && uvicorn search.asgi:application --host 0.0.0.0 --port 8000"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["webserver_worker"]

@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -68,13 +73,36 @@ WSGI_APPLICATION = "search.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
+
+db_name = os.getenv("db_name")
+db_user_name = os.getenv("db_user_name")
+db_psw = os.getenv("db_psw")
+db_host = os.getenv("db_host")
+db_port = os.getenv("db_port")
+
+print(f"db_name: {db_name}")
+print(f"db_user_name: {db_user_name}")
+print(f"db_psw: {db_psw}")
+print(f"db_host: {db_host}")
+print(f"db_port: {db_port}")
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": db_name,
+        "USER": db_user_name,
+        "PASSWORD": db_psw,
+        "HOST": db_host,
+        "PORT": db_port,
     }
 }
-
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -121,3 +149,9 @@ print(f"STATICFILES_DIRS: {STATICFILES_DIRS}")
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'

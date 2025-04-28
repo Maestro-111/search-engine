@@ -1,0 +1,139 @@
+{% extends 'base_display.html' %}
+{% load static %}
+
+{% block title %}All Crawl Jobs{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'source_wikipedia/css/wikipedia.css' %}">
+<style>
+    .jobs-container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .jobs-title {
+        margin-bottom: 30px;
+        color: #333;
+    }
+    
+    .jobs-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .jobs-table th, .jobs-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .jobs-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .jobs-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .status-queued {
+        background-color: #f8f9fa;
+        color: #6c757d;
+    }
+    
+    .status-running {
+        background-color: #e3f2fd;
+        color: #0d6efd;
+    }
+    
+    .status-completed {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .status-failed {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .btn {
+        display: inline-block;
+        padding: 6px 12px;
+        margin: 0 2px;
+        background-color: #3498db;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+    }
+    
+    .no-jobs {
+        padding: 30px;
+        text-align: center;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="jobs-container">
+    <h1 class="jobs-title">All Crawler Jobs</h1>
+    
+    {% if jobs %}
+    <table class="jobs-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Status</th>
+                <th>URL</th>
+                <th>Depth</th>
+                <th>Max Pages</th>
+                <th>Collection</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{ job.id }}</td>
+                <td><span class="status-badge status-{{ job.status }}">{{ job.status|title }}</span></td>
+                <td>{{ job.starting_url|truncatechars:30 }}</td>
+                <td>{{ job.crawl_depth }}</td>
+                <td>{{ job.max_pages }}</td>
+                <td>{{ job.mongodb_collection }}</td>
+                <td>{{ job.created_at|date:"M d, Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'crawler_job_status' job.id %}" class="btn">Details</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-jobs">
+        <p>No crawler jobs found.</p>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{% url 'crawl_wikipedia' %}" class="btn">Start New Crawl</a>
+    </div>
+</div>
+{% endblock %}

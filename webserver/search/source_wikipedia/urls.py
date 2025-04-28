@@ -4,4 +4,6 @@ from . import views
 urlpatterns = [
     path('search_wiki/', views.search_wikipedia, name='search_wikipedia'),
     path('crawl_wiki/', views.crawl_wikipedia, name='crawl_wikipedia'),
+    path('wiki_crawl_status/<int:job_id>/', views.crawler_job_status, name='crawler_job_status'),
+    path('wiki_crawl_all_jobs/', views.all_crawler_jobs, name='all_crawler_jobs'),
 ]

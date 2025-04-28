@@ -15,10 +15,10 @@ class WikipediaCrawlForm(forms.Form):
         widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
 
-    mongodb_collection = forms.URLField(
+    mongodb_collection = forms.CharField(
         label="MongoDB Collection",
         help_text="Name of MongoDB Collection",
-        widget=forms.URLInput(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
 
     max_pages = forms.IntegerField(

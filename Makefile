@@ -53,28 +53,28 @@ clean:
 # Django commands
 .PHONY: migrations migrate shell static
 migrations:
-	$(DC) $(COMPOSE_FILES) exec web python manage.py makemigrations
+	$(DC) $(COMPOSE_FILES) exec webserver python manage.py makemigrations
 
 migrate:
-	$(DC) $(COMPOSE_FILES) exec web python manage.py migrate
+	$(DC) $(COMPOSE_FILES) exec webserver python manage.py migrate
 
 shell:
-	$(DC) $(COMPOSE_FILES) exec web python manage.py shell
+	$(DC) $(COMPOSE_FILES) exec webserver python manage.py shell
 
 static:
-	$(DC) $(COMPOSE_FILES) exec web python manage.py collectstatic --noinput
+	$(DC) $(COMPOSE_FILES) exec webserver python manage.py collectstatic --noinput
 
 # Development helpers
 .PHONY: lint test coverage
 lint:
-	$(DC) $(COMPOSE_FILES) exec web flake8 .
+	$(DC) $(COMPOSE_FILES) exec wwebservereb flake8 .
 
 test:
-	$(DC) $(COMPOSE_FILES) exec web python manage.py test
+	$(DC) $(COMPOSE_FILES) exec webserver python manage.py test
 
 coverage:
-	$(DC) $(COMPOSE_FILES) exec web coverage run manage.py test
-	$(DC) $(COMPOSE_FILES) exec web coverage report
+	$(DC) $(COMPOSE_FILES) exec webserver coverage run manage.py test
+	$(DC) $(COMPOSE_FILES) exec webserver coverage report
 
 # Help
 .PHONY: help
