@@ -25,10 +25,8 @@ class MongoDBPipeline:
 
     def open_spider(self, spider):
 
-        print(f"MongoDBPipeline.open_spider: Connecting to {self.mongo_uri}")
         self.client = pymongo.MongoClient(self.mongo_uri)
         self.db = self.client[self.mongo_db]
-        print(f"Creating index on {self.collection_name}")
         self.db[self.collection_name].create_index('url', unique=True)
 
     def close_spider(self, spider):

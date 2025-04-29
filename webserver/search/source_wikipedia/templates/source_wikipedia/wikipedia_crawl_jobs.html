@@ -136,4 +136,7 @@
         <a href="{% url 'crawl_wikipedia' %}" class="btn">Start New Crawl</a>
     </div>
 </div>
+<ul class="search-nav-links app-specific-nav">
+    <li><a href="{% url 'search_wikipedia' %}" {% if 'search_wikipedia' in request.path %}class="active"{% endif %}>Search Wiki</a></li>
+</ul>
 {% endblock %}

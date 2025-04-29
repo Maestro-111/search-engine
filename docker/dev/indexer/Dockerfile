@@ -30,5 +30,5 @@ ENV MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_DATABASE=wikipedia_db \
     MONGODB_COLLECTION=articles
 
-ENTRYPOINT ["/bin/bash"]
+CMD ["python", "/app/api.py"]
 

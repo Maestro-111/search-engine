@@ -5,6 +5,8 @@
 This project is a scalable search engine system with web crawling, data indexing, and a web interface. 
 It's built using a microservices architecture with Docker Compose for easy deployment.
 
+You can index existing data sources (whatever is available on the menu tab) or upload your own data source (tbd)
+
 ## Architecture 
 
 ## Set up
@@ -44,6 +46,7 @@ make prod build up
 3) better design for menu app (cont - home tab spacing)
 4) elastic query class (implement query_specified_fields method)
 5) rewise how crawling - indexing - search pipeline should look like (cont)
-6) add celery
-7) add postgres sql
-8) add "custom data source" option
+   1. Add elastic component (crawling is done)
+   2. make the dashboard more agile (paginator + able to remove the job info)
+6) add "custom data source" option
+7) user auth?

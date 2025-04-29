@@ -37,6 +37,9 @@
     <ul class="search-nav-links app-specific-nav">
         <li><a href="{% url 'crawl_wikipedia' %}" {% if 'crawl_wikipedia' in request.path %}class="active"{% endif %}>Crawl Wiki</a></li>
     </ul>
+    <ul class="search-nav-links app-specific-nav">
+        <li><a href="{% url 'all_crawler_jobs' %}" {% if 'all_crawler_jobs' in request.path %}class="active"{% endif %}>Your Crawler Jobs</a></li>
+    </ul>
 {% endblock %}
 
 {% block search_js %}

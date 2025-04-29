@@ -30,6 +30,8 @@ sqlalchemy = "^2.0.0"
 elasticsearch = "^8.0.0"
 celery = "^5.5.2"
 redis = "^5.2.1"
+fastapi = "^0.103.0"
+uvicorn = "^0.23.0"
 
 # webserver-specific dependencies
 [tool.poetry.group.webserver.dependencies]
