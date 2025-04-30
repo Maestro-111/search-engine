@@ -18,10 +18,12 @@ jobs_status = {}
 
 
 class CrawlRequest(BaseModel):
+
     starting_url: HttpUrl
     crawl_depth: int = 1
     max_pages: int = 5
-    mongodb_collection: str = "articles"
+    mongo_db: str
+    mongodb_collection: str
 
 
 class JobStatusResponse(BaseModel):
@@ -81,7 +83,7 @@ async def run_crawl(job_id: str, request: CrawlRequest):
 
         cmd = [
             "bash", "-c",
-            f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-collection {request.mongodb_collection}"
+            f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db {request.mongo_db} --mongo-collection {request.mongodb_collection}"
         ]
 
         logger.info(f"Starting crawl job {job_id} with command: {cmd}")
@@ -143,6 +145,6 @@ async def list_jobs():
 
 
 if __name__ == "__main__":
-    import uvicorn
 
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)

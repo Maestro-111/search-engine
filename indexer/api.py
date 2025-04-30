@@ -71,7 +71,7 @@ async def run_indexer(job_id: str, request: IndexRequest):
 
         cmd = [
             "bash", "-c",
-            f"cd /app && python mongo_to_elastic.py --mongo-db {request.mongo_db} --mongo-collection {request.mongo_collection} --elastic-index {request.elastic_index} --batch-size {request.batch_size}"
+            f"cd /app/indexer && python mongo_to_elastic.py --mongo-db {request.mongo_db} --mongo-collection {request.mongo_collection} --elastic-index {request.elastic_index} --batch-size {request.batch_size}"
         ]
 
         logger.info(f"Starting indexer job {job_id} with command: {cmd}")
@@ -113,3 +113,9 @@ async def list_jobs():
         JobStatusResponse(job_id=id, status=info["status"], error=info["error"])
         for id, info in jobs_status.items()
     ]
+
+
+if __name__ == "__main__":
+
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5000)

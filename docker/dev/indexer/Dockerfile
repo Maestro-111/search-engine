@@ -30,5 +30,5 @@ ENV MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_DATABASE=wikipedia_db \
     MONGODB_COLLECTION=articles
 
-CMD ["python", "/app/api.py"]
+CMD ["python", "/app/indexer/api.py"]
 

@@ -57,13 +57,16 @@
 {% endblock %}
 
 <nav class="search-nav">
-    <ul class="search-nav-links primary-nav">
-        <li><a href="{% url 'menu:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Home Page</a></li>
-    </ul>
+    <div class="nav-group">
+        <!-- Home link first -->
+        <ul class="search-nav-links primary-nav">
+            <li><a href="{% url 'menu:index' %}" {% if request.path == '/' %}class="active"{% endif %}>Home Page</a></li>
+        </ul>
 
-    {% block crawl_specific %}
-    {% endblock %}
-
+        <!-- App-specific links second -->
+        {% block crawl_specific %}
+        {% endblock %}
+    </div>
 </nav>
 {% endblock %}
 

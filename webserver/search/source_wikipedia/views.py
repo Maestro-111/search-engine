@@ -1,10 +1,10 @@
 
 from django.core.paginator import Paginator
 from .utils.elastic_agent import QueryElastic
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import WikipediaCrawlForm
-from .models import CrawlJob
+from .models import CrawlJob, IndexJob
 from .tasks import run_crawl_job  # This will be your Celery task
 import logging
 
@@ -47,30 +47,43 @@ def crawl_wikipedia(request):
         form = WikipediaCrawlForm(request.POST)
         if form.is_valid():
             # Extract form data
+
             starting_url = form.cleaned_data['starting_url']
             crawl_depth = form.cleaned_data['crawl_depth']
             max_pages = form.cleaned_data['max_pages']
+            mongodb_database = form.cleaned_data['mongodb_database']
             mongodb_collection = form.cleaned_data['mongodb_collection']
+
+            elastic_index = form.cleaned_data['elastic_index']
+            batch_size =  form.cleaned_data['batch_size']
 
             # Log the request
             logger.info(f"Starting crawl {starting_url} with depth {crawl_depth} and max_pages {max_pages}. "
-                        f"Going to store the results in {mongodb_collection}")
+                        f"Going to store the results in db called {mongodb_database} in {mongodb_collection}")
 
-            # Create a job record in the database
-            job = CrawlJob.objects.create(
+            crawl_job = CrawlJob.objects.create(
                 status="queued",
                 starting_url=starting_url,
                 crawl_depth=crawl_depth,
                 max_pages=max_pages,
-                mongodb_collection=mongodb_collection
+                mongodb_collection=mongodb_collection,
+                mongodb_db=mongodb_database
             )
 
-            # Send the task to Celery
-            run_crawl_job.delay(job.id)
 
-            # Redirect to the job status page
-            messages.success(request, "Crawl job has been submitted successfully.")
-            return redirect('crawler_job_status', job_id=job.id)
+            index_job = IndexJob.objects.create(
+                mongodb_db=mongodb_database,
+                mongodb_collection=mongodb_collection,
+                elastic_index=elastic_index,
+                batch_size=batch_size,
+                crawl_job = crawl_job
+            )
+
+
+            run_crawl_job.delay(crawl_job.id)
+
+            messages.success(request, "Crawl/Index job has been submitted successfully.")
+            return redirect('crawler_job_status', job_id=crawl_job.id)
     else:
         form = WikipediaCrawlForm()
 
@@ -87,7 +100,31 @@ def crawler_job_status(request, job_id):
         return redirect('crawl_wikipedia')
 
 
+def remove_job(request, job_id):
+
+    """Remove a crawler job"""
+
+    if request.method == 'POST':  # Require POST for deletion (security best practice)
+        crawl_job = get_object_or_404(CrawlJob, id=job_id)
+        job_id = crawl_job.id  # Save ID for message
+
+        if hasattr(crawl_job, 'index_jobs'):
+            crawl_job.index_jobs.all().delete()
+
+        crawl_job.delete()
+        messages.success(request, f"Crawler job #{job_id} has been deleted.")
+
+    return redirect('all_crawler_jobs')
+
+
 def all_crawler_jobs(request):
+
     """View to list all crawler jobs"""
+
     jobs = CrawlJob.objects.all().order_by('-created_at')
-    return render(request, 'source_wikipedia/wikipedia_crawl_jobs.html', {'jobs': jobs})
+    paginator = Paginator(jobs, 10)  # 10 jobs per page
+
+    page_number = request.GET.get('page', 1)
+    jobs_page = paginator.get_page(page_number)
+
+    return render(request, 'source_wikipedia/wikipedia_crawl_jobs.html', {'jobs': jobs_page})

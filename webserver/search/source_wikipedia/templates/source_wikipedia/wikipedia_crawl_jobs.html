@@ -77,16 +77,90 @@
         border-radius: 4px;
         text-decoration: none;
         font-size: 14px;
+        border: none;
+        cursor: pointer;
     }
-    
+
     .btn-secondary {
         background-color: #6c757d;
     }
-    
+
+    .btn-danger {
+        background-color: #dc3545;
+    }
+
+    .btn-danger:hover {
+        background-color: #bb2d3b;
+    }
+
     .no-jobs {
         padding: 30px;
         text-align: center;
         color: #6c757d;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin: 30px 0 15px;
+    }
+
+    .pagination .step-links {
+        display: flex;
+        align-items: center;
+    }
+
+    .pagination a {
+        margin: 0 5px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        color: #3498db;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .pagination a:hover {
+        background-color: #e9ecef;
+    }
+
+    .pagination .current {
+        margin: 0 10px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .pagination .disabled {
+        margin: 0 5px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        color: #adb5bd;
+        text-decoration: none;
+        font-size: 14px;
+        cursor: not-allowed;
+    }
+
+    /* Messages */
+    .message-container {
+        margin-bottom: 20px;
+    }
+
+    .message {
+        padding: 12px 20px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+
+    .message-success {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .message-error {
+        background-color: #f8d7da;
+        color: #842029;
     }
 </style>
 {% endblock %}
@@ -94,7 +168,17 @@
 {% block content %}
 <div class="jobs-container">
     <h1 class="jobs-title">All Crawler Jobs</h1>
-    
+
+    {% if messages %}
+    <div class="message-container">
+        {% for message in messages %}
+        <div class="message {% if message.tags %}message-{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% if jobs %}
     <table class="jobs-table">
         <thead>
@@ -121,22 +205,56 @@
                 <td>{{ job.created_at|date:"M d, Y H:i" }}</td>
                 <td>
                     <a href="{% url 'crawler_job_status' job.id %}" class="btn">Details</a>
+
+                    <!-- Delete Button -->
+                    <form method="post" action="{% url 'remove_job' job.id %}" style="display:inline;"
+                          onsubmit="return confirm('Are you sure you want to delete job #{{ job.id }}? This action cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    {% if jobs.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if jobs.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ jobs.previous_page_number }}">previous</a>
+            {% else %}
+                <span class="disabled">&laquo; first</span>
+                <span class="disabled">previous</span>
+            {% endif %}
+
+            <span class="current">
+                Page {{ jobs.number }} of {{ jobs.paginator.num_pages }}
+            </span>
+
+            {% if jobs.has_next %}
+                <a href="?page={{ jobs.next_page_number }}">next</a>
+                <a href="?page={{ jobs.paginator.num_pages }}">last &raquo;</a>
+            {% else %}
+                <span class="disabled">next</span>
+                <span class="disabled">last &raquo;</span>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+
     {% else %}
     <div class="no-jobs">
         <p>No crawler jobs found.</p>
     </div>
     {% endif %}
-    
+
     <div style="margin-top: 30px; text-align: center;">
-        <a href="{% url 'crawl_wikipedia' %}" class="btn">Start New Crawl</a>
+        <a href="{% url 'crawl_wikipedia' %}" class="btn" style="margin-right: 10px;">Start New Crawl</a>
+        <a href="{% url 'search_wikipedia' %}" class="btn">Back to Search</a>
     </div>
+
 </div>
-<ul class="search-nav-links app-specific-nav">
-    <li><a href="{% url 'search_wikipedia' %}" {% if 'search_wikipedia' in request.path %}class="active"{% endif %}>Search Wiki</a></li>
-</ul>
 {% endblock %}

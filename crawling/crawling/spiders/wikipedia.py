@@ -19,7 +19,8 @@ class WikipediaSpider(CrawlSpider):
                 deny=(r'/wiki/Wikipedia:', r'/wiki/Help:', r'/wiki/File:', r'/wiki/Portal:')
             ),
             callback='parse_article',
-            follow=True
+            follow=True,
+            process_links='limit_links_per_page'
         ),
     )
 
@@ -29,7 +30,7 @@ class WikipediaSpider(CrawlSpider):
         super(WikipediaSpider, self).__init__(*args, **kwargs)
 
     def limit_links_per_page(self, links):
-        return links[:3]
+        return links[:300]
 
     def parse_article(self, response):
         """Extract content from a Wikipedia article."""

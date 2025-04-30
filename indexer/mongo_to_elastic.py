@@ -96,14 +96,18 @@ def main():
         print(f"Index {index_name} exists: {exists}")
 
         if exists:
-            # Delete existing index
-            print(f"Deleting existing index: {index_name}")
-            es_client.indices.delete(index=index_name)
-            print(f"Index {index_name} deleted")
+            try:
+                es_client.indices.put_mapping(index=index_name, body=mapping["mappings"])
+                print(f"Updated mapping for index {index_name}")
+            except Exception as e:
+                print(f"Warning: Could not update mapping: {e}")
+        else:
+            try:
+                es_client.indices.create(index=index_name, body=mapping)
+                print(f"Index {index_name} created successfully")
+            except Exception as e:
+                print(f"Warning: Could not create mapping: {e}")
 
-        print(f"Creating Elasticsearch index: {index_name}")
-        es_client.indices.create(index=index_name, body=mapping)
-        print(f"Index {index_name} created successfully")
     except Exception as e:
         print(f"Error with index: {e}")
         return

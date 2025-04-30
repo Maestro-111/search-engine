@@ -1,5 +1,8 @@
 from elasticsearch import Elasticsearch
 import os
+import logging
+
+logger = logging.getLogger("webserver")
 
 class QueryElastic:
 
@@ -32,7 +35,12 @@ class QueryElastic:
                 "size": 100
         }
 
-        search_results = self.es.search(index="wikipedia", body=search_body)
+        try:
+
+            search_results = self.es.search(index="wikipedia", body=search_body)
+        except Exception as e:
+            logger.error(e)
+            return []
 
         # Process the results
         raw_results = []

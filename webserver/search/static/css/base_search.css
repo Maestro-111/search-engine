@@ -119,9 +119,15 @@
     background-color: transparent;
     border-radius: 8px;
     text-align: right;
-    width: 100%; /* Make it span full width */
     display: flex;
-    justify-content: flex-end; /* Align everything to the right by default */
+    justify-content: flex-end; /* Keep everything at the right */
+}
+
+.nav-group {
+    display: flex;
+    flex-direction: column; /* Stack the nav sections vertically */
+    align-items: flex-end; /* Align to the right */
+    gap: 10px; /* Space between nav sections */
 }
 
 .nav-title {
@@ -132,18 +138,21 @@
 
 .search-nav-links {
     display: flex;
+    flex-direction: column; /* Stack links vertically */
     list-style: none;
     margin: 0;
     padding: 0;
-    gap: 10px;
+    gap: 10px; /* Space between links */
+    align-items: flex-end; /* Align to the right */
 }
 
 
 .primary-nav {
-    margin-right: auto;
+    order: 2; /* Last in the stack */
 }
 
 .app-specific-nav {
+    order: 1; /* First in the stack */
 }
 
 .search-nav-links li {
@@ -194,16 +203,25 @@
     .search-nav {
         position: static;
         margin-top: 20px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav-group {
         flex-direction: column;
         align-items: center;
+        width: 100%;
     }
 
-    .search-nav-links {
+   .search-nav-links {
         justify-content: center;
         margin-bottom: 10px;
+        flex-wrap: wrap;
     }
 
-    .primary-nav {
-        margin-right: 0;
-    }
 }
+
+
+
+
+

@@ -58,8 +58,6 @@ services:
     stdin_open: true
     environment:
       - MONGODB_URI=mongodb://root:example@mongodb:27017/
-    ports:
-      - "5000:5000"
     networks:
       - search-network
   
@@ -157,18 +155,16 @@ services:
     networks:
       - search-network
 
-#  pgadmin:
-#    image: dpage/pgadmin4:latest
-#    container_name: pgadmin
-#    environment:
-#      PGADMIN_DEFAULT_EMAIL: admin@example.com
-#      PGADMIN_DEFAULT_PASSWORD: admin
-#    ports:
-#      - "5050:5050"
-#    depends_on:
-#      - db
-#    networks:
-#      - search-network
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.1
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - search-network
 
 networks:
   search-network:
