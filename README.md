@@ -9,6 +9,11 @@ You can index existing data sources (whatever is available on the menu tab) or u
 
 ## Architecture 
 
+Web Crawling: We use Scrapy for Crawling. Crawling module is wrapped into fast api app for http requests from webserver. Scrapy will save the docs in Mongo DB
+Indexing: We use ElasticSearch to index documents from Mongo DB. 
+Webserver: UI tool built with Django
+
+
 ## Set up
 
 1. Clone the repository
@@ -45,8 +50,7 @@ make prod build up
 2) wiki app (cont)
 3) better design for menu app (cont - home tab spacing)
 4) elastic query class (implement query_specified_fields method)
-5) rewise how crawling - indexing - search pipeline should look like (cont)
-   1. Add elastic component (crawling is done)
-   2. make the dashboard more agile (paginator + able to remove the job info)
-6) add "custom data source" option
-7) user auth?
+5) add "custom data source" option
+6) user auth?
+7) connect to db
+8) how to rank elastic response?

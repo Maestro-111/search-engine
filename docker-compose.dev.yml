@@ -152,6 +152,8 @@ services:
       POSTGRES_DB: ${db_name}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - search-network
 
