@@ -8,6 +8,22 @@ import json
 import time
 
 
+def extract_title_from_url(url):
+    """Extract a title from a Wikipedia URL by formatting the last path component."""
+    try:
+        # Extract the last part of the URL path (after the last slash)
+        last_path_component = url.split('/')[-1]
+
+        # Replace underscores with spaces and decode URL encoding
+        from urllib.parse import unquote
+        title = unquote(last_path_component.replace('_', ' '))
+
+        return title
+    except Exception as e:
+        print(f"Error extracting title from URL {url}: {e}")
+        return ""
+
+
 def main():
     parser = argparse.ArgumentParser(description='Transfer data from MongoDB to Elasticsearch')
 
@@ -91,6 +107,7 @@ def main():
 
     # Create or update index
     index_name = args.elastic_index
+
     try:
         exists = es_client.indices.exists(index=index_name)
         print(f"Index {index_name} exists: {exists}")
@@ -122,14 +139,16 @@ def main():
         failed = 0
 
         for skip in range(0, total_docs, batch_size):
+
             batch = list(mongo_collection.find().skip(skip).limit(batch_size))
             actions = []
 
             for doc in batch:
+
                 try:
+
                     doc_id = str(doc.pop('_id', ''))
 
-                    # Extract link URLs and texts from internal_links
                     link_urls = []
                     link_texts = []
 
@@ -142,10 +161,15 @@ def main():
                                 if 'text' in link:
                                     link_texts.append(link['text'])
 
-                    # Prepare the document for indexing
+                    url = doc.get('url', '')
+                    title = doc.get('title', '')
+
+                    if not title and url:
+                        title = extract_title_from_url(url)
+
                     indexed_doc = {
-                        'url': doc.get('url', ''),
-                        'title': doc.get('title', ''),
+                        'url': url,
+                        'title': title,
                         'summary': doc.get('summary', ''),
                         'content': doc.get('content', ''),
                         'categories': doc.get('categories', []),

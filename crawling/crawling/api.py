@@ -71,16 +71,6 @@ async def run_crawl(job_id: str, request: CrawlRequest):
         # Update status to running
         jobs_status[job_id]["status"] = "running"
 
-        # Build the command to run crawl.py
-        # cmd = [
-        #     "python",
-        #     "-m", "crawling.crawling.crawl",  # Full module path
-        #     "--seed-url", str(request.starting_url),
-        #     "--depth-limit", str(request.crawl_depth),
-        #     "--page-limit", str(request.max_pages),
-        #     "--mongo-collection", request.mongodb_collection
-        # ]
-
         cmd = [
             "bash", "-c",
             f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db {request.mongo_db} --mongo-collection {request.mongodb_collection}"

@@ -28,7 +28,7 @@ def search_wikipedia(request):
     if query:
 
         es = QueryElastic()
-        raw_results = es.query_general(query)
+        raw_results = es.query_specified_fields(query)
 
         paginator = Paginator(raw_results, 10)
         page_number = request.GET.get('page', 1)

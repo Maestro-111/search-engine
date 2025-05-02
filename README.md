@@ -52,5 +52,5 @@ make prod build up
 4) elastic query class (implement query_specified_fields method)
 5) add "custom data source" option
 6) user auth?
-7) connect to db
+7) connect to db (not working, cont)
 8) how to rank elastic response?
