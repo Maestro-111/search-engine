@@ -69,18 +69,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "search.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-
-
 db_name = os.getenv("db_name")
 db_user_name = os.getenv("db_user_name")
 db_psw = os.getenv("db_psw")
@@ -101,6 +89,18 @@ DATABASES = {
         "PASSWORD": db_psw,
         "HOST": db_host,
         "PORT": db_port,
+    }
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
+        },
+        "KEY_PREFIX": "search"
     }
 }
 

@@ -120,6 +120,7 @@ class QueryElastic:
         raw_results = []
 
         for hit in search_results["hits"]["hits"]:
+
             source = hit["_source"]
             highlight = hit.get("highlight", {})
 
@@ -138,10 +139,9 @@ class QueryElastic:
 
             title = source.get("title")
             if title is None:
-                # Extract title from URL if possible
+
                 url = source.get("url", "")
                 if "wikipedia.org/wiki/" in url:
-                    # Extract the title from the URL
                     title = url.split("/wiki/")[-1].replace("_", " ")
                 else:
                     title = "Untitled Document"

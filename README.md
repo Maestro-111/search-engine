@@ -49,8 +49,8 @@ make prod build up
 1) ngnix for load balance 
 2) wiki app (cont)
 3) better design for menu app (cont - home tab spacing)
-4) elastic query class (implement query_specified_fields method)
-5) add "custom data source" option
-6) user auth?
-7) connect to db (not working, cont)
-8) how to rank elastic response?
+4) add "custom data source" option
+5) user auth?
+6) connect to db (not working, cont)
+7) how to rank elastic response?
+8) add reddis cache to djano

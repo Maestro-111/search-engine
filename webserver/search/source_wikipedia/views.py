@@ -7,11 +7,10 @@ from .forms import WikipediaCrawlForm
 from .models import CrawlJob, IndexJob
 from .tasks import run_crawl_job  # This will be your Celery task
 import logging
-
-# import aiohttp
-# import asyncio
+from django.core.cache import cache
 
 logger = logging.getLogger("webserver")
+
 
 def search_wikipedia(request):
 
@@ -20,15 +19,20 @@ def search_wikipedia(request):
 
     if request.method == "POST":
         query = request.POST.get('query', '')
-
     elif request.method == "GET":
         query = request.GET.get('query', '')
 
-
     if query:
 
-        es = QueryElastic()
-        raw_results = es.query_specified_fields(query)
+        cache_key = f"elasticsearch_results:{query}"
+        raw_results = cache.get(cache_key)
+
+        if raw_results is None:
+
+            es = QueryElastic()
+            raw_results = es.query_specified_fields(query)
+
+            cache.set(cache_key, raw_results, 3600)
 
         paginator = Paginator(raw_results, 10)
         page_number = request.GET.get('page', 1)
@@ -38,9 +42,7 @@ def search_wikipedia(request):
         'query': query,
         'results': results
     }
-
     return render(request, 'source_wikipedia/wikipedia_search.html', context)
-
 
 def crawl_wikipedia(request):
     if request.method == 'POST':
@@ -110,6 +112,8 @@ def remove_job(request, job_id):
 
         if hasattr(crawl_job, 'index_jobs'):
             crawl_job.index_jobs.all().delete()
+
+        logger.info(f"Removing crawler job {job_id}.")
 
         crawl_job.delete()
         messages.success(request, f"Crawler job #{job_id} has been deleted.")
