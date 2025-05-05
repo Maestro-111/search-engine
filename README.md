@@ -52,5 +52,7 @@ make prod build up
 4) add "custom data source" option
 5) user auth?
 6) connect to db (not working, cont)
-7) how to rank elastic response?
-8) add reddis cache to djano
+7) how to rank elastic response
+    1) first elastic ranks by additional fields
+    2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
+8) ajax request for search 

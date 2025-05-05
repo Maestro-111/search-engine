@@ -8,6 +8,7 @@ from .models import CrawlJob, IndexJob
 from .tasks import run_crawl_job  # This will be your Celery task
 import logging
 from django.core.cache import cache
+from django.http import JsonResponse
 
 logger = logging.getLogger("webserver")
 
@@ -17,26 +18,47 @@ def search_wikipedia(request):
     query = ""
     results = []
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     if request.method == "POST":
         query = request.POST.get('query', '')
     elif request.method == "GET":
         query = request.GET.get('query', '')
 
     if query:
-
         cache_key = f"elasticsearch_results:{query}"
         raw_results = cache.get(cache_key)
-
         if raw_results is None:
-
             es = QueryElastic()
             raw_results = es.query_specified_fields(query)
-
             cache.set(cache_key, raw_results, 3600)
-
         paginator = Paginator(raw_results, 10)
         page_number = request.GET.get('page', 1)
         results = paginator.get_page(page_number)
+
+    if is_ajax:
+
+        # Return JSON response for AJAX requests
+
+        result_data = []
+
+        for result in results:
+            result_data.append({
+                'title': result["title"],
+                'url': result["url"],
+                'excerpt': result["excerpt"],
+                'categories': list(result["categories"]),
+                'last_updated': str(result["last_updated"])
+            })
+
+        return JsonResponse({
+            'query': query,
+            'results': result_data,
+            'has_next': results.has_next(),
+            'has_previous': results.has_previous(),
+            'page_number': results.number,
+            'num_pages': results.paginator.num_pages
+        })
 
     context = {
         'query': query,

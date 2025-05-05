@@ -6,6 +6,7 @@ import subprocess
 import uuid
 from typing import Optional, Dict, List
 import logging
+import pymongo
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -94,8 +95,6 @@ async def run_crawl(job_id: str, request: CrawlRequest):
         if stderr_text:
             logger.warning(f"Crawler stderr: {stderr_text}")
 
-        # Check MongoDB for the collection
-        import pymongo
         try:
             mongo_uri = "mongodb://root:example@mongodb:27017/"
             client = pymongo.MongoClient(mongo_uri)
