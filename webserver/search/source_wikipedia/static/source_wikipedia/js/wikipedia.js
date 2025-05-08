@@ -16,13 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = document.querySelector('input[name="query"]').value;
         if (!query) return;
 
-        // Show loading spinner
         resultsContainer.innerHTML = '';
         loadingSpinner.style.display = 'block';
 
         console.log(`${searchForm.action}?query=${encodeURIComponent(query)}&page=${page}`)
 
-        // Perform AJAX request
         fetch(`${searchForm.action}?query=${encodeURIComponent(query)}&page=${page}`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -33,10 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide loading spinner
             loadingSpinner.style.display = 'none';
 
-            // Display results
             displayResults(data);
 
-            // Update URL without page reload (for browser history)
             const url = new URL(window.location);
             url.searchParams.set('query', query);
             url.searchParams.set('page', page);
@@ -85,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         resultsContainer.innerHTML = html;
 
-        // Generate pagination controls
         let paginationHtml = '';
         if (data.has_previous) {
             paginationHtml += `<a href="#" class="page-link" data-page="${data.page_number - 1}">Previous</a>`;
@@ -99,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         paginationControls.innerHTML = paginationHtml;
 
-        // Add event listeners to pagination links
         document.querySelectorAll('.page-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -110,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Check if there's an initial query in the URL to perform search automatically
     const urlParams = new URLSearchParams(window.location.search);
     const initialQuery = urlParams.get('query');
     const initialPage = urlParams.get('page') || 1;

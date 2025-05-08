@@ -22,6 +22,7 @@ MONGODB_URI = 'mongodb://localhost:27017'
 MONGODB_DATABASE = 'wikipedia_db'
 MONGODB_COLLECTION = 'ww2_articles'
 
+LOG_LEVEL = 'DEBUG'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "crawling (+http://www.yourdomain.com)"

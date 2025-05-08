@@ -58,6 +58,13 @@ services:
     stdin_open: true
     environment:
       - MONGODB_URI=mongodb://root:example@mongodb:27017/
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
     networks:
       - search-network
   
