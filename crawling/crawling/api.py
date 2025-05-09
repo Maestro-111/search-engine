@@ -1,30 +1,36 @@
-# api.py - Place this in your crawler container
+import redis
+import json
+import logging
+import asyncio
+import uuid
+import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
-import asyncio
-import subprocess
-import uuid
 from typing import Optional, Dict, List
-import logging
 import pymongo
+import psutil
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# In-memory storage for job status (in production, use a database)
-jobs_status = {}
-
 
 class CrawlRequest(BaseModel):
-
     starting_url: HttpUrl
     crawl_depth: int = 1
     max_pages: int = 5
     mongo_db: str
     mongodb_collection: str
+
+    def model_dump(self):
+        return {
+            "starting_url": str(self.starting_url),
+            "crawl_depth": self.crawl_depth,
+            "max_pages": self.max_pages,
+            "mongo_db": self.mongo_db,
+            "mongodb_collection": self.mongodb_collection
+        }
 
 
 class JobStatusResponse(BaseModel):
@@ -33,18 +39,26 @@ class JobStatusResponse(BaseModel):
     error: Optional[str] = None
 
 
+redis_client = redis.Redis(host='redis', port=6379, db=0)
+
+def get_memory_usage():
+    process = psutil.Process()
+    return process.memory_info().rss / 1024 / 1024
+
+
 @app.post("/crawl", response_model=JobStatusResponse)
 async def start_crawl(request: CrawlRequest):
-    # Generate a unique job ID
-    job_id = str(uuid.uuid4())
 
-    # Store initial job status
-    jobs_status[job_id] = {
+    job_id = str(uuid.uuid4())
+    job_data = {
         "status": "queued",
-        "error": None
+        "error": None,
+        "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
+        "crawl_request": request.model_dump()  # Use model_dump instead of dict
     }
 
-    # Start the crawl process in the background
+    redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
+
     asyncio.create_task(run_crawl(job_id, request))
 
     # Return immediately with the job ID
@@ -56,21 +70,59 @@ async def start_crawl(request: CrawlRequest):
 
 @app.get("/status/{job_id}", response_model=JobStatusResponse)
 async def get_status(job_id: str):
-    if job_id not in jobs_status:
+    job_data_str = redis_client.get(f"job:{job_id}")
+
+    if not job_data_str:
+        logger.error(f"Job {job_id} not found")
         raise HTTPException(status_code=404, detail="Job not found")
+
+    job_data = json.loads(job_data_str)
+    logger.info(f"Job {job_id} status: {job_data['status']}")
 
     return JobStatusResponse(
         job_id=job_id,
-        status=jobs_status[job_id]["status"],
-        error=jobs_status[job_id]["error"]
+        status=job_data["status"],
+        error=job_data["error"]
     )
 
 
-# Add to your run_crawl function in api.py
 async def run_crawl(job_id: str, request: CrawlRequest):
+
+    heartbeat_task = None
+
     try:
-        # Update status to running
-        jobs_status[job_id]["status"] = "running"
+
+        job_data_str = redis_client.get(f"job:{job_id}")
+        job_data = json.loads(job_data_str)
+
+        job_data["status"] = "running"
+        job_data["started_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+
+        redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
+
+        logger.info(f"Starting crawl job {job_id} with params: {request.model_dump()}")
+
+        async def heartbeat():
+            while True:
+                try:
+                    current_memory = get_memory_usage()
+                    job_data_str = redis_client.get(f"job:{job_id}")
+                    if job_data_str:
+                        job_data = json.loads(job_data_str)
+                        # Update last_heartbeat field and memory usage
+                        job_data["last_heartbeat"] = datetime.datetime.now(datetime.UTC).isoformat()
+                        job_data["memory_usage_mb"] = current_memory
+                        redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
+                        logger.debug(f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB")
+                except Exception as e:
+                    logger.error(f"Error in heartbeat for job {job_id}: {str(e)}")
+                await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+
+        # Start heartbeat task
+        heartbeat_task = asyncio.create_task(heartbeat())
+
+        # Set timeout for the job (e.g., 2 hours)
+        max_runtime = 7200  # seconds
 
         cmd = [
             "bash", "-c",
@@ -78,6 +130,7 @@ async def run_crawl(job_id: str, request: CrawlRequest):
         ]
 
         logger.info(f"Starting crawl job {job_id} with command: {cmd}")
+        logger.info(f"Memory usage before starting crawler: {get_memory_usage():.2f}MB")
 
         # Run the process
         process = await asyncio.create_subprocess_exec(
@@ -86,51 +139,139 @@ async def run_crawl(job_id: str, request: CrawlRequest):
             stderr=asyncio.subprocess.PIPE,
         )
 
-        stdout, stderr = await process.communicate()
-        stdout_text = stdout.decode()
-        stderr_text = stderr.decode()
+        async def read_stream_chunks(stream, cb):
+            buffer = b""
+            while True:
+                chunk = await stream.read(8192)  # Read in chunks instead of lines
+                if not chunk:  # EOF
+                    if buffer:  # Process any remaining data
+                        try:
+                            text = buffer.decode('utf-8', errors='replace')
+                            if text.strip():
+                                cb(text.strip())
+                        except Exception as e:
+                            logger.error(f"Error processing buffer: {str(e)}")
+                    break
 
-        # Log the output for debugging
-        logger.info(f"Crawler stdout: {stdout_text}")
-        if stderr_text:
-            logger.warning(f"Crawler stderr: {stderr_text}")
+                buffer += chunk
 
+                # Process complete lines from buffer
+                try:
+                    text = buffer.decode('utf-8', errors='replace')
+                    if '\n' in text:
+                        lines = text.split('\n')
+                        # Keep the last (potentially incomplete) line in the buffer
+                        for line in lines[:-1]:
+                            if line.strip():
+                                cb(line.strip())
+                        buffer = lines[-1].encode('utf-8')
+                    else:
+                        # If no newlines but buffer is getting large, process it anyway
+                        if len(buffer) > 65536:  # 64KB
+                            cb(text.strip())
+                            buffer = b""
+                except Exception as e:
+                    logger.error(f"Error processing chunk: {str(e)}")
+                    buffer = b""  # Reset buffer on error
+
+        # Run with timeout
         try:
-            mongo_uri = "mongodb://root:example@mongodb:27017/"
-            client = pymongo.MongoClient(mongo_uri)
-            db = client["wikipedia_db"]
-            collections = db.list_collection_names()
-            logger.info(f"Available MongoDB collections: {collections}")
+            # Run stdout/stderr readers and process waiter with timeout
+            await asyncio.wait_for(
+                asyncio.gather(
+                    read_stream_chunks(process.stdout, lambda x: logger.info(f"Crawler stdout: {x}")),
+                    read_stream_chunks(process.stderr, lambda x: logger.warning(f"Crawler stderr: {x}")),
+                    process.wait()
+                ),
+                timeout=max_runtime
+            )
 
-            if request.mongodb_collection in collections:
-                count = db[request.mongodb_collection].count_documents({})
-                logger.info(f"Collection {request.mongodb_collection} contains {count} documents")
+            exit_code = process.returncode
+            logger.info(f"Crawler process exited with code: {exit_code}")
+
+            try:
+                mongo_uri = "mongodb://root:example@mongodb:27017/"
+                client = pymongo.MongoClient(mongo_uri)
+                db = client[request.mongo_db]
+                collections = db.list_collection_names()
+                logger.info(f"Available MongoDB collections: {collections}")
+
+                if request.mongodb_collection in collections:
+                    count = db[request.mongodb_collection].count_documents({})
+                    logger.info(f"Collection {request.mongodb_collection} contains {count} documents")
+                else:
+                    logger.warning(f"Collection {request.mongodb_collection} was not created")
+            except Exception as e:
+                logger.error(f"Error checking MongoDB: {str(e)}")
+
+            job_data_str = redis_client.get(f"job:{job_id}")
+            job_data = json.loads(job_data_str)
+
+            if exit_code == 0:
+                logger.info(f"Crawl job {job_id} completed successfully")
+                job_data["status"] = "completed"
             else:
-                logger.warning(f"Collection {request.mongodb_collection} was not created")
-        except Exception as e:
-            logger.error(f"Error checking MongoDB: {str(e)}")
+                logger.error(f"Crawl job {job_id} failed with exit code {exit_code}")
+                job_data["status"] = "failed"
+                job_data["error"] = f"Process exited with code {exit_code}"
 
-        # Check if successful
-        if process.returncode == 0:
-            logger.info(f"Crawl job {job_id} completed successfully")
-            jobs_status[job_id]["status"] = "completed"
-        else:
-            logger.error(f"Crawl job {job_id} failed: {stderr_text}")
-            jobs_status[job_id]["status"] = "failed"
-            jobs_status[job_id]["error"] = stderr_text
+            job_data["finished_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+            redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
+
+        except asyncio.TimeoutError:
+            # Kill the process if it times out
+            logger.error(f"Crawl job {job_id} timed out after {max_runtime} seconds")
+            process.kill()
+
+            job_data_str = redis_client.get(f"job:{job_id}")
+            job_data = json.loads(job_data_str)
+            job_data["status"] = "failed"
+            job_data["error"] = f"Job timed out after {max_runtime} seconds"
+            job_data["finished_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+            redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
 
     except Exception as e:
         logger.exception(f"Error in crawl job {job_id}: {str(e)}")
-        jobs_status[job_id]["status"] = "failed"
-        jobs_status[job_id]["error"] = str(e)
+
+        try:
+            job_data_str = redis_client.get(f"job:{job_id}")
+            job_data = json.loads(job_data_str)
+            job_data["status"] = "failed"
+            job_data["error"] = str(e)
+            job_data["finished_at"] = datetime.datetime.now(datetime.UTC).isoformat()
+            redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
+        except Exception as redis_error:
+            logger.error(f"Failed to update Redis after error: {str(redis_error)}")
+    finally:
+
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+
 
 
 @app.get("/jobs", response_model=List[JobStatusResponse])
 async def list_jobs():
-    return [
-        JobStatusResponse(job_id=id, status=info["status"], error=info["error"])
-        for id, info in jobs_status.items()
-    ]
+    job_keys = redis_client.keys("job:*")
+    jobs = []
+
+    for key in job_keys:
+        job_id = key.decode().split(":", 1)[1]
+        job_data_str = redis_client.get(key)
+        if job_data_str:
+            job_data = json.loads(job_data_str)
+            jobs.append(
+                JobStatusResponse(
+                    job_id=job_id,
+                    status=job_data["status"],
+                    error=job_data["error"]
+                )
+            )
+
+    return jobs
 
 
 if __name__ == "__main__":

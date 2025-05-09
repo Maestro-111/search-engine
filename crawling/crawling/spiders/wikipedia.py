@@ -84,19 +84,6 @@ class WikipediaSpider(CrawlSpider):
             else:
                 last_modified = None
 
-        print({
-            'url': response.url,
-            'title': title,
-            'summary': summary,
-            'content': content,
-            'categories': categories,
-            'infobox': infobox_data,
-            'internal_links': internal_links,
-            'last_modified': last_modified,
-            'crawl_time': datetime.now().isoformat()
-        }
-)
-
         yield {
             'url': response.url,
             'title': title,
