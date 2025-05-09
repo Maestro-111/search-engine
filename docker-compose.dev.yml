@@ -84,19 +84,26 @@ services:
 
   webserver:
     image: search-engine-webserver:latest
-    container_name: webserver
     depends_on:
       - mongodb
       - elasticsearch
       - db
     ports:
-      - "8000:8000"
+      - "8000"
     volumes:
       - ./webserver/search:/app/webserver/search
       - static_volume:/app/webserver/search/collected_static/
     networks:
       - search-network
     command: web
+    deploy:
+      replicas: 3
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   webserver_worker:
     image: search-engine-webserver:latest
