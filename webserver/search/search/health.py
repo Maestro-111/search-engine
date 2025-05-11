@@ -1,9 +1,16 @@
-# In your views.py
+
 def health_check(request):
-    # Check critical dependencies
+
+    """
+    Health checkpoint for webserver container
+
+    :param request:
+    :return:
+
+    """
+
     all_healthy = True
 
-    # Check database connection
     try:
         from django.db import connections
         for name in connections:
@@ -15,7 +22,6 @@ def health_check(request):
     except:
         all_healthy = False
 
-    # Return appropriate status code
     if all_healthy:
         from django.http import HttpResponse
         return HttpResponse("OK")

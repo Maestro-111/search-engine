@@ -25,4 +25,5 @@ urlpatterns = [
     path("", include("menu.urls")),
     path("wikipedia/", include("source_wikipedia.urls")),
     path("health/", health_check, name="health_check"),
+    path("bbc/", include("source_bbc.urls")),
 ]

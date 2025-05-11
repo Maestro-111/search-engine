@@ -22,6 +22,7 @@ class CrawlRequest(BaseModel):
     max_pages: int = 5
     mongo_db: str
     mongodb_collection: str
+    spider_name:str
 
     def model_dump(self):
         return {
@@ -29,7 +30,8 @@ class CrawlRequest(BaseModel):
             "crawl_depth": self.crawl_depth,
             "max_pages": self.max_pages,
             "mongo_db": self.mongo_db,
-            "mongodb_collection": self.mongodb_collection
+            "mongodb_collection": self.mongodb_collection,
+            "spider_name": self.spider_name,
         }
 
 
@@ -126,7 +128,8 @@ async def run_crawl(job_id: str, request: CrawlRequest):
 
         cmd = [
             "bash", "-c",
-            f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db {request.mongo_db} --mongo-collection {request.mongodb_collection}"
+            f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db "
+            f"{request.mongo_db} --mongo-collection {request.mongodb_collection} --spider-name {request.spider_name}"
         ]
 
         logger.info(f"Starting crawl job {job_id} with command: {cmd}")

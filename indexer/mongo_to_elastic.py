@@ -83,7 +83,6 @@ def main():
         print(f"Error connecting to Elasticsearch: {e}")
         return
 
-    # Define index mapping with correct types for our fields
     mapping = {
         "mappings": {
             "properties": {

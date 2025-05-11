@@ -11,7 +11,10 @@ You can index existing data sources (whatever is available on the menu tab) or u
 
 Web Crawling: We use Scrapy for Crawling. Crawling module is wrapped into fast api app for http requests from webserver. Scrapy will save the docs in Mongo DB
 Indexing: We use ElasticSearch to index documents from Mongo DB. 
-Webserver: UI tool built with Django
+Webserver: UI tool built with Django to monitor crawling job/ search elastic.
+
+We use LLM to break down the request from user into entities and pass them to elastic client for more accurate mapping.
+
 
 
 ## Set up
@@ -46,13 +49,11 @@ make prod build up
 
 ## TO DO:
 
-1) ngnix for load balance 
-2) wiki app (cont)
-3) better design for menu app (cont - home tab spacing)
-4) add "custom data source" option
-5) user auth?
-6) connect to db (not working, cont)
-7) how to rank elastic response
+
+1) how to rank elastic response
     1) first elastic ranks by additional fields
     2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
-8) ajax request for search 
+2) Continue adjusting webserver to include bbc
+   1. source_bbc app
+   2. indexer container has to be flexible towards the inputs from different apps
+3) unit testing for django (webserver)

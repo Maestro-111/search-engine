@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "menu.apps.MenuConfig",
-    "source_wikipedia.apps.WikipediaConfig"
+    "source_wikipedia.apps.WikipediaConfig",
+    "source_bbc.apps.SourceBBCConfig",
 ]
 
 MIDDLEWARE = [

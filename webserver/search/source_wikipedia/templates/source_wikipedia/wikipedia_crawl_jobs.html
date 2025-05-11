@@ -27,6 +27,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Spider Name</th>
                 <th>Status</th>
                 <th>URL</th>
                 <th>Depth</th>
@@ -40,6 +41,7 @@
             {% for job in jobs %}
             <tr>
                 <td>{{ job.id }}</td>
+                <td>{{ job.spider_name }}</td>
                 <td><span class="status-badge status-{{ job.status }}">{{ job.status|title }}</span></td>
                 <td>{{ job.starting_url|truncatechars:30 }}</td>
                 <td>{{ job.crawl_depth }}</td>

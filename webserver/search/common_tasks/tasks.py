@@ -2,13 +2,17 @@
 from celery import shared_task
 import requests
 import logging
-from .models import CrawlJob,IndexJob
+# from source_wikipedia.models import CrawlJob,IndexJob
+
 
 logger = logging.getLogger("webserver")
 
 @shared_task
 def run_index_job(index_job_id):
     """Start a new indexing job and schedule status checking"""
+
+    from source_wikipedia.models import CrawlJob, IndexJob
+
     try:
         index_job = IndexJob.objects.get(id=index_job_id)
         index_job.status = "running"
@@ -62,6 +66,7 @@ def run_index_job(index_job_id):
 @shared_task
 def check_index_status(index_job_id, indexer_job_id):
     """Check the status of an indexing job"""
+    from source_wikipedia.models import CrawlJob, IndexJob
     try:
         response = requests.get(
             f"http://indexer:5000/status/{indexer_job_id}",
@@ -94,6 +99,7 @@ def check_index_status(index_job_id, indexer_job_id):
 @shared_task
 def run_crawl_job(job_id):
     """Start a new crawl job and schedule status checking"""
+    from source_wikipedia.models import CrawlJob, IndexJob
     try:
 
         job = CrawlJob.objects.get(id=job_id)
@@ -111,6 +117,7 @@ def run_crawl_job(job_id):
                 "max_pages": job.max_pages,
                 "mongodb_collection": job.mongodb_collection,
                 "mongo_db": job.mongodb_db,
+                "spider_name": job.spider_name,
             },
             timeout=30  # Timeout for initial request
         )
@@ -148,6 +155,7 @@ def run_crawl_job(job_id):
 @shared_task
 def check_crawl_status(job_id, crawler_job_id):
     """Check the status of a crawl job and trigger indexing when complete"""
+    from source_wikipedia.models import CrawlJob, IndexJob
     try:
         response = requests.get(
             f"http://crawler:5000/status/{crawler_job_id}",

@@ -19,6 +19,7 @@ class CrawlJob(models.Model):
 
     mongodb_db = models.CharField(max_length=100, blank=True, null=True)
     mongodb_collection = models.CharField(max_length=100)
+    spider_name = models.CharField(max_length=100, blank=True, null=True)
 
     error_message = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

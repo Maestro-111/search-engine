@@ -3,16 +3,22 @@ import argparse
 import os
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
-from spiders.wikipedia import WikipediaSpider
 
-import time
+from spiders.wikipedia import WikipediaSpider
+from spiders.reddit import RedditSpider
+from spiders.bbc import BBCSpider
+
+
+
+class SpiderNotImplenetedException(Exception):
+    pass
 
 
 def main():
 
     parser = argparse.ArgumentParser(description='Start a web crawling job')
 
-    parser.add_argument('--seed-url', type=str, default='https://en.wikipedia.org/wiki/World_War_II',
+    parser.add_argument('--seed-url', type=str, default='https://en.wikipedia.org/wiki/',
                         help='Starting URL for the crawler')
     parser.add_argument('--mongo-uri', type=str,
                         default=os.environ.get('MONGODB_URI', 'mongodb://localhost:27017'),
@@ -25,6 +31,8 @@ def main():
                         help='Maximum depth for crawler to follow links')
     parser.add_argument('--page-limit', type=int, default=5,
                         help='Maximum number of pages to crawl')
+    parser.add_argument('--spider-name', type=str, default="wikipedia_spider",
+                        help='Name of the spider')
 
     args = parser.parse_args()
 
@@ -69,9 +77,20 @@ def main():
     else:
         print('MongoDB connection successful')
 
-    process = CrawlerProcess(settings)
-    process.crawl(WikipediaSpider, start_urls=[args.seed_url])
-    process.start()
+    if args.spider_name == 'wikipedia_spider':
+        process = CrawlerProcess(settings)
+        process.crawl(WikipediaSpider, start_urls=[args.seed_url])
+        process.start()
+    elif args.spider_name == 'reddit_spider':
+        process = CrawlerProcess(settings)
+        process.crawl(RedditSpider, start_urls=[args.seed_url])
+        process.start()
+    elif args.spider_name == 'bbc_spider':
+        process = CrawlerProcess(settings)
+        process.crawl(BBCSpider, start_urls=[args.seed_url])
+        process.start()
+    else:
+        raise SpiderNotImplenetedException("Spider name '{}' not implemented".format(args.spider_name))
 
 
 if __name__ == '__main__':

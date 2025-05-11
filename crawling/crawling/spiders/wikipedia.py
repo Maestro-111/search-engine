@@ -26,7 +26,7 @@ class WikipediaSpider(CrawlSpider):
 
     def __init__(self, *args, **kwargs):
 
-        self.start_urls = kwargs.pop('start_urls', ["https://en.wikipedia.org/wiki/World_War_II"])
+        self.start_urls = kwargs.pop('start_urls', ["https://en.wikipedia.org/wiki/"])
         super(WikipediaSpider, self).__init__(*args, **kwargs)
 
     def limit_links_per_page(self, links):

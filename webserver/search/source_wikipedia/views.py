@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import WikipediaCrawlForm
 from .models import CrawlJob, IndexJob
-from .tasks import run_crawl_job  # This will be your Celery task
+from common_tasks.tasks import run_crawl_job
 import logging
 from django.core.cache import cache
 from django.http import JsonResponse
@@ -77,6 +77,7 @@ def crawl_wikipedia(request):
             max_pages = form.cleaned_data['max_pages']
             mongodb_database = form.cleaned_data['mongodb_database']
             mongodb_collection = form.cleaned_data['mongodb_collection']
+            spider_name = "wikipedia_spider"
 
             elastic_index = form.cleaned_data['elastic_index']
             batch_size =  form.cleaned_data['batch_size']
@@ -91,7 +92,8 @@ def crawl_wikipedia(request):
                 crawl_depth=crawl_depth,
                 max_pages=max_pages,
                 mongodb_collection=mongodb_collection,
-                mongodb_db=mongodb_database
+                mongodb_db=mongodb_database,
+                spider_name=spider_name
             )
 
 

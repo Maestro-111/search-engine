@@ -3,7 +3,6 @@ DEBUG = True
 
 import logging.config
 import os
-from pathlib import Path
 from datetime import datetime
 
 os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
