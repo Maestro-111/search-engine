@@ -16,3 +16,5 @@ collected_static/
 
 *.log
 .env
+.DS_Store/
+.DS_Store

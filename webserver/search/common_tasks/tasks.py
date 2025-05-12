@@ -2,7 +2,6 @@
 from celery import shared_task
 import requests
 import logging
-# from source_wikipedia.models import CrawlJob,IndexJob
 
 
 logger = logging.getLogger("webserver")
