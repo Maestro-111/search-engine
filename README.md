@@ -57,4 +57,3 @@ make prod build up
    1. source_bbc app
    2. indexer container has to be flexible towards the inputs from different apps
 3) unit testing for django (webserver)
-4) remove all ds_store

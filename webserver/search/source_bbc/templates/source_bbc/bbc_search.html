@@ -1,0 +1,46 @@
+{% extends 'base_search.html' %}
+{% load static %}
+
+{% block title %}BBC Search{% endblock %}
+
+{% block search_css %}
+<link rel="stylesheet" href="{% static 'source_bbc/css/bbc.css' %}">
+{% endblock %}
+
+{% block search_action %}{% url 'bbc_search' %}{% endblock %}
+{% block search_placeholder %}Search BBC...{% endblock %}
+
+{% block results %}
+<div class="loading-spinner">
+    <img src="{% static 'icons/spinner.gif' %}" alt="Loading...">
+    <p>Searching BBC...</p>
+</div>
+
+<div class="bbc-results">
+    {% if results %}
+        {% for result in results %}
+        <div class="bbc-article">
+            <h3><a href="{{ result.url }}" target="_blank">{{ result.title }}</a></h3>
+            <div class="article-excerpt">{{ result.excerpt|safe }}</div>
+            <div class="article-meta">
+                <span class="last-updated">Updated: {{ result.last_updated }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="pagination-controls">
+</div>
+{% endblock %}
+
+{% block crawl_specific %}
+<ul class="search-nav-links app-specific-nav">
+    <li><a href="{% url 'bbc_crawl' %}" {% if 'bbc_crawl' in request.path %}class="active"{% endif %}>Crawl BBC</a></li>
+    <li><a href="{% url 'bbc_all_crawler_jobs' %}" {% if 'bbc_all_crawler_jobs' in request.path %}class="active"{% endif %}>Your BBC Crawler Jobs</a></li>
+</ul>
+{% endblock %}
+
+{% block extra_search_js %}
+<script src="{% static 'source_bbc/js/bbc.js' %}"></script>
+{% endblock %}

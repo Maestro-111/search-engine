@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{% static 'source_wikipedia/css/wikipedia.css' %}">
 {% endblock %}
 
-{% block search_action %}{% url 'search_wikipedia' %}{% endblock %}
+{% block search_action %}{% url 'wiki_search' %}{% endblock %}
 {% block search_placeholder %}Search Wikipedia...{% endblock %}
 
 {% block results %}
@@ -38,14 +38,13 @@
 </div>
 
 <div class="pagination-controls">
-    <!-- Pagination controls will be added via JavaScript -->
 </div>
 {% endblock %}
 
 {% block crawl_specific %}
 <ul class="search-nav-links app-specific-nav">
-    <li><a href="{% url 'crawl_wikipedia' %}" {% if 'crawl_wikipedia' in request.path %}class="active"{% endif %}>Crawl Wiki</a></li>
-    <li><a href="{% url 'all_crawler_jobs' %}" {% if 'all_crawler_jobs' in request.path %}class="active"{% endif %}>Your Crawler Jobs</a></li>
+    <li><a href="{% url 'wiki_crawl' %}" {% if 'wiki_crawl' in request.path %}class="active"{% endif %}>Crawl Wiki</a></li>
+    <li><a href="{% url 'wiki_all_crawler_jobs' %}" {% if 'wiki_all_crawler_jobs' in request.path %}class="active"{% endif %}>Your Wiki Crawler Jobs</a></li>
 </ul>
 {% endblock %}
 

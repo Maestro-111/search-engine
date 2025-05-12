@@ -7,6 +7,6 @@ def get_source_metadata():
     return {
         'name': 'Wikipedia',  # Display name
         'icon': 'source_wikipedia/icons/wikipedia.png',  # Path to icon in static folder
-        'url_name': "search_wikipedia",  # URL name pattern for this source's main view
+        'url_name': "wiki_search",  # URL name pattern for this source's main view
         'description': 'Search data crawled from Wikipedia',  # Short description
     }

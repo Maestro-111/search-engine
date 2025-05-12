@@ -91,8 +91,8 @@ def main():
                 "summary": {"type": "text", "analyzer": "english"},
                 "content": {"type": "text", "analyzer": "english"},
                 "categories": {"type": "keyword"},
-                "link_urls": {"type": "keyword"},  # Store just the URLs as keywords
-                "link_texts": {"type": "text", "analyzer": "english"}  # Store link texts for searching
+                "link_urls": {"type": "keyword"},
+                "link_texts": {"type": "text", "analyzer": "english"}
             }
         },
         "settings": {
@@ -104,7 +104,6 @@ def main():
         }
     }
 
-    # Create or update index
     index_name = args.elastic_index
 
     try:
@@ -172,6 +171,7 @@ def main():
                         'summary': doc.get('summary', ''),
                         'content': doc.get('content', ''),
                         'categories': doc.get('categories', []),
+                        'author': doc.get('author', ''),
                         'link_urls': link_urls,
                         'link_texts': link_texts
                     }

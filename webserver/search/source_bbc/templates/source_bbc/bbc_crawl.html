@@ -4,13 +4,13 @@
 {% block title %}Wikipedia Crawl{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'source_wikipedia/css/wikipedia.css' %}">
+<link rel="stylesheet" href="{% static 'source_bbc/css/bbc.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="crawl-container">
-    <h1 class="crawl-title">Crawl Wikipedia</h1>
-    <p class="crawl-description">Configure your Wikipedia crawl parameters below</p>
+    <h1 class="crawl-title">Crawl BBC</h1>
+    <p class="crawl-description">Configure your BBC crawl parameters below</p>
 
     <form method="post" class="crawl-form">
         {% csrf_token %}
@@ -37,7 +37,7 @@
 </div>
 
 <ul class="search-nav-links app-specific-nav">
-  <li><a href="{% url 'wiki_search' %}" {% if 'wiki_search' in request.path %}class="active"{% endif %}>Search Wiki</a></li>
+  <li><a href="{% url 'bbc_search' %}" {% if 'bbc_search' in request.path %}class="active"{% endif %}>Search BBC</a></li>
 </ul>
 
 {% endblock %}

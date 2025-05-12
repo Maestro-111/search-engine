@@ -1,14 +1,14 @@
-
 from django.core.paginator import Paginator
-from .utils.elastic_agent import QueryElastic
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import WikipediaCrawlForm
 from .models import CrawlJob, IndexJob
-from common_tasks.tasks import run_crawl_job
+from common_utils.tasks import run_crawl_job
+from .utils.elastic_wiki import WikipediaElastic
 import logging
 from django.core.cache import cache
 from django.http import JsonResponse
+
 
 logger = logging.getLogger("webserver")
 
@@ -20,18 +20,25 @@ def search_wikipedia(request):
 
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
+    es = WikipediaElastic(logger)
+
     if request.method == "POST":
         query = request.POST.get('query', '')
     elif request.method == "GET":
         query = request.GET.get('query', '')
 
     if query:
-        cache_key = f"elasticsearch_results:{query}"
+        cache_key = f"wiki_elasticsearch_results:{query}"
         raw_results = cache.get(cache_key)
         if raw_results is None:
-            es = QueryElastic()
-            raw_results = es.query_specified_fields(query)
+
+            prompt = es.generate_prompt_wiki(query)
+            entities = es.extract_entities_with_openai(prompt)
+            search_body = es.build_elasticsearch_query_wiki(entities)
+
+            raw_results = es.query_specified_fields(search_body=search_body, index="wikipedia")
             cache.set(cache_key, raw_results, 3600)
+
         paginator = Paginator(raw_results, 10)
         page_number = request.GET.get('page', 1)
         results = paginator.get_page(page_number)
@@ -70,7 +77,6 @@ def crawl_wikipedia(request):
     if request.method == 'POST':
         form = WikipediaCrawlForm(request.POST)
         if form.is_valid():
-            # Extract form data
 
             starting_url = form.cleaned_data['starting_url']
             crawl_depth = form.cleaned_data['crawl_depth']
@@ -83,7 +89,7 @@ def crawl_wikipedia(request):
             batch_size =  form.cleaned_data['batch_size']
 
             # Log the request
-            logger.info(f"Starting crawl {starting_url} with depth {crawl_depth} and max_pages {max_pages}. "
+            logger.info(f"Starting Wiki crawl {starting_url} with depth {crawl_depth} and max_pages {max_pages}. "
                         f"Going to store the results in db called {mongodb_database} in {mongodb_collection}")
 
             crawl_job = CrawlJob.objects.create(
@@ -108,7 +114,7 @@ def crawl_wikipedia(request):
 
             run_crawl_job.delay(crawl_job.id)
 
-            messages.success(request, "Crawl/Index job has been submitted successfully.")
+            messages.success(request, "Wiki Crawl/Index job has been submitted successfully.")
             return redirect('crawler_job_status', job_id=crawl_job.id)
     else:
         form = WikipediaCrawlForm()
@@ -116,17 +122,17 @@ def crawl_wikipedia(request):
     return render(request, 'source_wikipedia/wikipedia_crawl.html', {'form': form})
 
 
-def crawler_job_status(request, job_id):
+def wiki_crawler_job_status(request, job_id):
     """View to check the status of a crawler job"""
     try:
         job = CrawlJob.objects.get(id=job_id)
         return render(request, 'source_wikipedia/wikipedia_crawl_status.html', {'job': job})
     except CrawlJob.DoesNotExist:
         messages.error(request, "Job not found.")
-        return redirect('crawl_wikipedia')
+        return redirect('wiki_crawl')
 
 
-def remove_job(request, job_id):
+def wiki_remove_job(request, job_id):
 
     """Remove a crawler job"""
 
@@ -142,14 +148,14 @@ def remove_job(request, job_id):
         crawl_job.delete()
         messages.success(request, f"Crawler job #{job_id} has been deleted.")
 
-    return redirect('all_crawler_jobs')
+    return redirect('wiki_all_crawler_jobs')
 
 
-def all_crawler_jobs(request):
+def wiki_all_crawler_jobs(request):
 
     """View to list all crawler jobs"""
 
-    jobs = CrawlJob.objects.all().order_by('-created_at')
+    jobs = CrawlJob.objects.filter(spider_name="wikipedia_spider").order_by('-created_at')
     paginator = Paginator(jobs, 10)  # 10 jobs per page
 
     page_number = request.GET.get('page', 1)
