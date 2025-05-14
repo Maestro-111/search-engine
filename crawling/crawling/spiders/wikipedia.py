@@ -29,6 +29,8 @@ class WikipediaSpider(CrawlSpider):
         self.start_urls = kwargs.pop('start_urls', ["https://en.wikipedia.org/wiki/"])
         super(WikipediaSpider, self).__init__(*args, **kwargs)
 
+
+
     def limit_links_per_page(self, links):
         return links[:300]
 
@@ -63,8 +65,8 @@ class WikipediaSpider(CrawlSpider):
                 summary = self.clean_text(' '.join(text))
                 break
 
-        # Extract links to other Wikipedia articles
         internal_links = []
+
         for link in response.css('div.mw-parser-output p a[href^="/wiki/"]'):
             href = link.css('::attr(href)').get()
             text = link.css('::text').get()

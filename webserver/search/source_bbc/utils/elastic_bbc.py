@@ -64,6 +64,8 @@ class BBCElastic(BaseElastic):
         Ensure your extraction matches the semantic structure of our Elasticsearch index to optimize search results.
         """
 
+        self.logger.info(f"Built BBC prompt")
+
         return prompt
 
     def build_elasticsearch_query_wiki(self, entities):

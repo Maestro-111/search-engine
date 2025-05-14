@@ -124,6 +124,7 @@ def crawl_wikipedia(request):
 
 def wiki_crawler_job_status(request, job_id):
     """View to check the status of a crawler job"""
+
     try:
         job = CrawlJob.objects.get(id=job_id)
         return render(request, 'source_wikipedia/wikipedia_crawl_status.html', {'job': job})

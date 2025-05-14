@@ -56,23 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Generate HTML for results
         data.results.forEach(result => {
-            let categoriesHtml = '';
-            if (result.categories && result.categories.length > 0) {
-                result.categories.forEach(category => {
-                    categoriesHtml += `<span class="category">${category}</span>`;
-                });
-            } else {
-                categoriesHtml = '<span class="category">Uncategorized</span>';
-            }
 
             html += `
-                <div class="wikipedia-article">
+                <div class="bbc-article">
                     <h3><a href="${result.url}" target="_blank">${result.title}</a></h3>
                     <div class="article-excerpt">${result.excerpt}</div>
                     <div class="article-meta">
-                        <div class="categories">
-                            ${categoriesHtml}
-                        </div>
                         <span class="last-updated">Updated: ${result.last_updated}</span>
                     </div>
                 </div>

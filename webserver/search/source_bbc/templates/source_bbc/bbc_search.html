@@ -17,17 +17,6 @@
 </div>
 
 <div class="bbc-results">
-    {% if results %}
-        {% for result in results %}
-        <div class="bbc-article">
-            <h3><a href="{{ result.url }}" target="_blank">{{ result.title }}</a></h3>
-            <div class="article-excerpt">{{ result.excerpt|safe }}</div>
-            <div class="article-meta">
-                <span class="last-updated">Updated: {{ result.last_updated }}</span>
-            </div>
-        </div>
-        {% endfor %}
-    {% endif %}
 </div>
 
 <div class="pagination-controls">

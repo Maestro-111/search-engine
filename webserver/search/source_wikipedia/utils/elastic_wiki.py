@@ -72,6 +72,8 @@ class WikipediaElastic(BaseElastic):
         Ensure your extraction matches the semantic structure of our Elasticsearch index to optimize search results.
         """
 
+        self.logger.info("Built Wiki prompt")
+
         return prompt
 
     def build_elasticsearch_query_wiki(self, entities):

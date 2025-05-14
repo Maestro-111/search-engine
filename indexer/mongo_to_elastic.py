@@ -1,4 +1,5 @@
 # search-engine/indexing/mongo_to_elastic.py
+
 import argparse
 import os
 import pymongo

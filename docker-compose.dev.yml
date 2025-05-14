@@ -65,6 +65,8 @@ services:
           memory: 4G
         reservations:
           memory: 1G
+    volumes:
+      - ./crawling/crawling:/app/crawling/crawling
     networks:
       - search-network
   

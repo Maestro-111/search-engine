@@ -26,8 +26,15 @@ class BBCSpider(scrapy.Spider):
         for url in self.start_urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
+
+    @staticmethod
+    def limit_links_per_page(links):
+        return links[:300]
+
     def parse(self, response):
+
         """Parse BBC pages for links and articles."""
+
         self.logger.info(f"Parsing page: {response.url}")
 
         # Check if this is an article page
@@ -38,6 +45,8 @@ class BBCSpider(scrapy.Spider):
         # Extract all links on the page
         links = response.css('a::attr(href)').getall()
         self.logger.info(f"Found {len(links)} links on page")
+
+        links = self.limit_links_per_page(links)
 
         # Process links
         for link in links:
@@ -72,11 +81,14 @@ class BBCSpider(scrapy.Spider):
 
     def is_article_page(self, url):
         """Check if a URL is likely to be a BBC article."""
-        # Most BBC article URLs contain numeric IDs
-        return re.search(r'/news/.*-\d+$', url) is not None
+        # Include both numeric IDs and alphanumeric article identifiers
+        return (re.search(r'/news/.*-\d+$', url) is not None or
+                re.search(r'/news/articles/[a-z0-9]+', url) is not None)
 
     def parse_article(self, response):
+
         """Extract content from a BBC article."""
+
         self.logger.info(f"Parsing article: {response.url}")
 
         # Extract title - try different selectors for BBC's layout
