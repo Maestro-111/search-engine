@@ -7,17 +7,21 @@ It's built using a microservices architecture with Docker Compose for easy deplo
 
 You can index existing data sources (whatever is available on the menu tab) or upload your own data source (tbd)
 
+![Project Introduction](icons/intro.gif)
+
 ## Architecture 
 
-Web Crawling: We use Scrapy for Crawling. Crawling module is wrapped into fast api app for http requests from webserver. Scrapy will save the docs in Mongo DB
-Indexing: We use ElasticSearch to index documents from Mongo DB. 
-Webserver: UI tool built with Django to monitor crawling job/ search elastic.
+**Web Crawling**: We use Scrapy for Crawling. Crawling module is wrapped into fast api app for http requests from webserver. Scrapy will save the found docs in Mongo DB.
 
-We use LLM to break down the request from user into entities and pass them to elastic client for more accurate mapping.
+**Indexing**: We use ElasticSearch to index documents from Mongo DB. 
+
+**Webserver**: UI tool built with Django/Celery to monitor/schedule crawling job/ search elastic.
+
+We use LLM (gpt-4) to break down the request to search engine from user into entities and pass them to elastic client for more accurate mapping.
 
 
 
-## Set up
+## Set up with Docker
 
 1. Clone the repository
 
@@ -53,7 +57,7 @@ make prod build up
 1) how to rank elastic response
     1) first elastic ranks by additional fields
     2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
-2) Continue adjusting webserver to include bbc
-   1. source_bbc app
-   2. indexer container has to be flexible towards the inputs from different apps
-3) unit testing for django (webserver)
+2) unit testing for django (webserver)
+3) CI/CD 
+4) Improve indexer API (from dict to Redis, add healthcheck job)
+5) Custom source for indexing

@@ -70,7 +70,7 @@
         {% endif %}
         
         {% if job.status == 'completed' %}
-        <a href="{% url '_wiki_search' %}" class="btn">Go to Wikipedia Search</a>
+        <a href="{% url 'wiki_search' %}" class="btn">Go to Wikipedia Search</a>
         {% endif %}
         
         <a href="{% url 'wiki_all_crawler_jobs' %}" class="btn btn-secondary">View All Jobs</a>

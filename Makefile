@@ -53,10 +53,10 @@ clean:
 # Django commands
 .PHONY: migrations migrate shell static
 migrations:
-	$(DC) $(COMPOSE_FILES) exec webserver python manage.py makemigrations
+	$(DC) $(COMPOSE_FILES) exec webserver sh -c "cd webserver/search && python manage.py makemigrations"
 
 migrate:
-	$(DC) $(COMPOSE_FILES) exec webserver python manage.py migrate
+	$(DC) $(COMPOSE_FILES) exec webserver sh -c "cd webserver/search && python manage.py migrate"
 
 shell:
 	$(DC) $(COMPOSE_FILES) exec webserver python manage.py shell
