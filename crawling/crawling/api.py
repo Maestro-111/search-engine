@@ -1,4 +1,5 @@
 import redis
+from redis.exceptions import RedisError
 import json
 import logging
 import asyncio
@@ -41,7 +42,14 @@ class JobStatusResponse(BaseModel):
     error: Optional[str] = None
 
 
-redis_client = redis.Redis(host='redis', port=6379, db=0)
+redis_pool = redis.ConnectionPool(host='redis', port=6379, db=0, max_connections=10)
+
+def get_redis_client():
+    try:
+        return redis.Redis(connection_pool=redis_pool)
+    except RedisError as e:
+        logger.error(f"Redis connection error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database connection error")
 
 def get_memory_usage():
     process = psutil.Process()
@@ -52,6 +60,8 @@ def get_memory_usage():
 async def start_crawl(request: CrawlRequest):
 
     job_id = str(uuid.uuid4())
+    redis_client = get_redis_client()
+
     job_data = {
         "status": "queued",
         "error": None,
@@ -72,6 +82,8 @@ async def start_crawl(request: CrawlRequest):
 
 @app.get("/status/{job_id}", response_model=JobStatusResponse)
 async def get_status(job_id: str):
+
+    redis_client = get_redis_client()
     job_data_str = redis_client.get(f"job:{job_id}")
 
     if not job_data_str:
@@ -88,11 +100,41 @@ async def get_status(job_id: str):
     )
 
 
+async def heartbeat(job_id):
+
+    redis_client = get_redis_client()
+
+    while True:
+
+        try:
+            redis_client = get_redis_client()
+
+            current_memory = get_memory_usage()
+            job_data_str = redis_client.get(f"job:{job_id}")
+
+            if job_data_str:
+
+                job_data = json.loads(job_data_str)
+
+                job_data["last_heartbeat"] = datetime.datetime.now(datetime.UTC).isoformat()
+                job_data["memory_usage_mb"] = current_memory
+
+                redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
+                logger.debug(f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB")
+
+        except Exception as e:
+
+            logger.error(f"Error in heartbeat for job {job_id}: {str(e)}")
+        await asyncio.sleep(30)
+
+
 async def run_crawl(job_id: str, request: CrawlRequest):
 
     heartbeat_task = None
 
     try:
+
+        redis_client = get_redis_client()
 
         job_data_str = redis_client.get(f"job:{job_id}")
         job_data = json.loads(job_data_str)
@@ -104,26 +146,9 @@ async def run_crawl(job_id: str, request: CrawlRequest):
 
         logger.info(f"Starting crawl job {job_id} with params: {request.model_dump()}")
 
-        async def heartbeat():
-            while True:
-                try:
-                    current_memory = get_memory_usage()
-                    job_data_str = redis_client.get(f"job:{job_id}")
-                    if job_data_str:
-                        job_data = json.loads(job_data_str)
-                        # Update last_heartbeat field and memory usage
-                        job_data["last_heartbeat"] = datetime.datetime.now(datetime.UTC).isoformat()
-                        job_data["memory_usage_mb"] = current_memory
-                        redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
-                        logger.debug(f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB")
-                except Exception as e:
-                    logger.error(f"Error in heartbeat for job {job_id}: {str(e)}")
-                await asyncio.sleep(30)  # Send heartbeat every 30 seconds
-
         # Start heartbeat task
-        heartbeat_task = asyncio.create_task(heartbeat())
+        heartbeat_task = asyncio.create_task(heartbeat(job_id))
 
-        # Set timeout for the job (e.g., 2 hours)
         max_runtime = 7200  # seconds
 
         cmd = [
@@ -254,27 +279,13 @@ async def run_crawl(job_id: str, request: CrawlRequest):
             except asyncio.CancelledError:
                 pass
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for load balancer."""
+    return {"status": "healthy"}
 
 
-@app.get("/jobs", response_model=List[JobStatusResponse])
-async def list_jobs():
-    job_keys = redis_client.keys("job:*")
-    jobs = []
 
-    for key in job_keys:
-        job_id = key.decode().split(":", 1)[1]
-        job_data_str = redis_client.get(key)
-        if job_data_str:
-            job_data = json.loads(job_data_str)
-            jobs.append(
-                JobStatusResponse(
-                    job_id=job_id,
-                    status=job_data["status"],
-                    error=job_data["error"]
-                )
-            )
-
-    return jobs
 
 
 if __name__ == "__main__":

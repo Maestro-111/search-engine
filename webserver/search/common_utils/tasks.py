@@ -109,7 +109,7 @@ def run_crawl_job(job_id):
 
         # Call the crawler API to start the job
         response = requests.post(
-            "http://crawler:5000/crawl",
+            "http://crawler_nginx:80/crawl/",
             json={
                 "starting_url": job.starting_url,
                 "crawl_depth": job.crawl_depth,
@@ -157,7 +157,7 @@ def check_crawl_status(job_id, crawler_job_id):
     from source_wikipedia.models import CrawlJob, IndexJob
     try:
         response = requests.get(
-            f"http://crawler:5000/status/{crawler_job_id}",
+            f"http://crawler_nginx:80/status/{crawler_job_id}",
             timeout=10
         )
 

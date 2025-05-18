@@ -61,3 +61,4 @@ make prod build up
 3) CI/CD 
 4) Improve indexer API (from dict to Redis, add healthcheck job)
 5) Custom source for indexing
+6) scale for crawling service

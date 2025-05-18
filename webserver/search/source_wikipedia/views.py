@@ -115,7 +115,7 @@ def crawl_wikipedia(request):
             run_crawl_job.delay(crawl_job.id)
 
             messages.success(request, "Wiki Crawl/Index job has been submitted successfully.")
-            return redirect('crawler_job_status', job_id=crawl_job.id)
+            return redirect('wiki_crawler_job_status', job_id=crawl_job.id)
     else:
         form = WikipediaCrawlForm()
 
