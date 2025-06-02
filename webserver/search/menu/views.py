@@ -1,11 +1,9 @@
-
 from django.shortcuts import render
 from django.apps import apps
 import importlib
 
 
 def index(request):
-
     """
     Menu page that displays all available web sources
     """
@@ -14,7 +12,7 @@ def index(request):
 
     print(all_apps)
 
-    source_apps = [app for app in all_apps if app.startswith('source_')]
+    source_apps = [app for app in all_apps if app.startswith("source_")]
 
     sources = []
     for app_name in source_apps:
@@ -26,31 +24,40 @@ def index(request):
         except (ImportError, AttributeError):
             continue
 
+    else:
+        try:
+            module = importlib.import_module("custom_data_source.source_info")
+            source_data = module.get_source_metadata()
+            sources.append(source_data)
+        except (ImportError, AttributeError):
+            pass
+
     print(sources)
 
     if not sources:
         sources = [
             {
-                'name': 'Google',
-                'icon': 'menu/icons/google.png',  # Placeholder path
-                'url_name': 'menu:index',  # Placeholder URL
-                'description': 'Google search results'
+                "name": "Google",
+                "icon": "menu/icons/google.png",  # Placeholder path
+                "url_name": "menu:index",  # Placeholder URL
+                "description": "Google search results",
             },
             {
-                'name': 'Twitter',
-                'icon': 'menu/icons/twitter.png',  # Placeholder path
-                'url_name': 'menu:index',  # Placeholder URL
-                'description': 'Twitter posts and profiles'
+                "name": "Twitter",
+                "icon": "menu/icons/twitter.png",  # Placeholder path
+                "url_name": "menu:index",  # Placeholder URL
+                "description": "Twitter posts and profiles",
             },
             {
-                'name': 'Amazon',
-                'icon': None,  # Will use default icon (first letter)
-                'url_name': 'menu:index',  # Placeholder URL
-                'description': 'Amazon product listings'
-            }
+                "name": "Amazon",
+                "icon": None,  # Will use default icon (first letter)
+                "url_name": "menu:index",  # Placeholder URL
+                "description": "Amazon product listings",
+            },
         ]
 
     context = {
-        'sources': sources,
+        "sources": sources,
     }
-    return render(request, 'menu/menu.html', context)
+
+    return render(request, "menu/menu.html", context)

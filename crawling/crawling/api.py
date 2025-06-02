@@ -7,7 +7,7 @@ import uuid
 import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
-from typing import Optional, Dict, List
+from typing import Optional
 import pymongo
 import psutil
 
@@ -23,7 +23,7 @@ class CrawlRequest(BaseModel):
     max_pages: int = 5
     mongo_db: str
     mongodb_collection: str
-    spider_name:str
+    spider_name: str
 
     def model_dump(self):
         return {
@@ -42,7 +42,8 @@ class JobStatusResponse(BaseModel):
     error: Optional[str] = None
 
 
-redis_pool = redis.ConnectionPool(host='redis', port=6379, db=0, max_connections=10)
+redis_pool = redis.ConnectionPool(host="redis", port=6379, db=0, max_connections=10)
+
 
 def get_redis_client():
     try:
@@ -50,6 +51,7 @@ def get_redis_client():
     except RedisError as e:
         logger.error(f"Redis connection error: {str(e)}")
         raise HTTPException(status_code=500, detail="Database connection error")
+
 
 def get_memory_usage():
     process = psutil.Process()
@@ -66,7 +68,7 @@ async def start_crawl(request: CrawlRequest):
         "status": "queued",
         "error": None,
         "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
-        "crawl_request": request.model_dump()  # Use model_dump instead of dict
+        "crawl_request": request.model_dump(),  # Use model_dump instead of dict
     }
 
     redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
@@ -74,10 +76,7 @@ async def start_crawl(request: CrawlRequest):
     asyncio.create_task(run_crawl(job_id, request))
 
     # Return immediately with the job ID
-    return JobStatusResponse(
-        job_id=job_id,
-        status="queued"
-    )
+    return JobStatusResponse(job_id=job_id, status="queued")
 
 
 @app.get("/status/{job_id}", response_model=JobStatusResponse)
@@ -94,15 +93,11 @@ async def get_status(job_id: str):
     logger.info(f"Job {job_id} status: {job_data['status']}")
 
     return JobStatusResponse(
-        job_id=job_id,
-        status=job_data["status"],
-        error=job_data["error"]
+        job_id=job_id, status=job_data["status"], error=job_data["error"]
     )
 
 
 async def heartbeat(job_id):
-
-    redis_client = get_redis_client()
 
     while True:
 
@@ -116,11 +111,15 @@ async def heartbeat(job_id):
 
                 job_data = json.loads(job_data_str)
 
-                job_data["last_heartbeat"] = datetime.datetime.now(datetime.UTC).isoformat()
+                job_data["last_heartbeat"] = datetime.datetime.now(
+                    datetime.UTC
+                ).isoformat()
                 job_data["memory_usage_mb"] = current_memory
 
                 redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
-                logger.debug(f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB")
+                logger.debug(
+                    f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB"
+                )
 
         except Exception as e:
 
@@ -152,9 +151,10 @@ async def run_crawl(job_id: str, request: CrawlRequest):
         max_runtime = 7200  # seconds
 
         cmd = [
-            "bash", "-c",
+            "bash",
+            "-c",
             f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db "
-            f"{request.mongo_db} --mongo-collection {request.mongodb_collection} --spider-name {request.spider_name}"
+            f"{request.mongo_db} --mongo-collection {request.mongodb_collection} --spider-name {request.spider_name}",
         ]
 
         logger.info(f"Starting crawl job {job_id} with command: {cmd}")
@@ -174,7 +174,7 @@ async def run_crawl(job_id: str, request: CrawlRequest):
                 if not chunk:  # EOF
                     if buffer:  # Process any remaining data
                         try:
-                            text = buffer.decode('utf-8', errors='replace')
+                            text = buffer.decode("utf-8", errors="replace")
                             if text.strip():
                                 cb(text.strip())
                         except Exception as e:
@@ -185,14 +185,14 @@ async def run_crawl(job_id: str, request: CrawlRequest):
 
                 # Process complete lines from buffer
                 try:
-                    text = buffer.decode('utf-8', errors='replace')
-                    if '\n' in text:
-                        lines = text.split('\n')
+                    text = buffer.decode("utf-8", errors="replace")
+                    if "\n" in text:
+                        lines = text.split("\n")
                         # Keep the last (potentially incomplete) line in the buffer
                         for line in lines[:-1]:
                             if line.strip():
                                 cb(line.strip())
-                        buffer = lines[-1].encode('utf-8')
+                        buffer = lines[-1].encode("utf-8")
                     else:
                         # If no newlines but buffer is getting large, process it anyway
                         if len(buffer) > 65536:  # 64KB
@@ -207,11 +207,15 @@ async def run_crawl(job_id: str, request: CrawlRequest):
             # Run stdout/stderr readers and process waiter with timeout
             await asyncio.wait_for(
                 asyncio.gather(
-                    read_stream_chunks(process.stdout, lambda x: logger.info(f"Crawler stdout: {x}")),
-                    read_stream_chunks(process.stderr, lambda x: logger.warning(f"Crawler stderr: {x}")),
-                    process.wait()
+                    read_stream_chunks(
+                        process.stdout, lambda x: logger.info(f"Crawler stdout: {x}")
+                    ),
+                    read_stream_chunks(
+                        process.stderr, lambda x: logger.warning(f"Crawler stderr: {x}")
+                    ),
+                    process.wait(),
                 ),
-                timeout=max_runtime
+                timeout=max_runtime,
             )
 
             exit_code = process.returncode
@@ -226,9 +230,13 @@ async def run_crawl(job_id: str, request: CrawlRequest):
 
                 if request.mongodb_collection in collections:
                     count = db[request.mongodb_collection].count_documents({})
-                    logger.info(f"Collection {request.mongodb_collection} contains {count} documents")
+                    logger.info(
+                        f"Collection {request.mongodb_collection} contains {count} documents"
+                    )
                 else:
-                    logger.warning(f"Collection {request.mongodb_collection} was not created")
+                    logger.warning(
+                        f"Collection {request.mongodb_collection} was not created"
+                    )
             except Exception as e:
                 logger.error(f"Error checking MongoDB: {str(e)}")
 
@@ -279,16 +287,15 @@ async def run_crawl(job_id: str, request: CrawlRequest):
             except asyncio.CancelledError:
                 pass
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for load balancer."""
     return {"status": "healthy"}
 
 
-
-
-
 if __name__ == "__main__":
 
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=5000)

@@ -1,11 +1,12 @@
 from django import forms
 
+
 class BBCCrawlForm(forms.Form):
 
     starting_url = forms.URLField(
         label="Starting URL",
         help_text="The BBC page to start crawling from",
-        widget=forms.URLInput(attrs={'class': 'form-control'})
+        widget=forms.URLInput(attrs={"class": "form-control"}),
     )
     crawl_depth = forms.IntegerField(
         label="Crawl Depth",
@@ -13,19 +14,19 @@ class BBCCrawlForm(forms.Form):
         min_value=1,
         max_value=10,
         initial=2,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
 
     mongodb_database = forms.CharField(
         label="MongoDB DB",
         help_text="Name of MongoDB DB",
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
 
     mongodb_collection = forms.CharField(
         label="MongoDB Collection",
         help_text="Name of MongoDB Collection",
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
 
     max_pages = forms.IntegerField(
@@ -34,14 +35,14 @@ class BBCCrawlForm(forms.Form):
         min_value=1,
         max_value=100000,
         initial=20,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
 
     elastic_index = forms.CharField(
         label="Elasticsearch Index",
         help_text="Index name for Elasticsearch (leave blank to use same as MongoDB collection)",
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
 
     batch_size = forms.IntegerField(
@@ -51,5 +52,5 @@ class BBCCrawlForm(forms.Form):
         max_value=1000,
         initial=100,
         required=True,
-        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
     )

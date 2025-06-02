@@ -1,11 +1,10 @@
-
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 import asyncio
 import redis
 from redis.exceptions import RedisError
 import uuid
-from typing import Optional, Dict, List
+from typing import Optional
 import logging
 import datetime
 import json
@@ -17,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-redis_pool = redis.ConnectionPool(host='redis', port=6379, db=0, max_connections=10)
+redis_pool = redis.ConnectionPool(host="redis", port=6379, db=0, max_connections=10)
+
 
 def get_redis_client():
     try:
@@ -28,10 +28,10 @@ def get_redis_client():
 
 
 class IndexRequest(BaseModel):
-    mongo_db : str
-    mongo_collection : str
-    elastic_index : str
-    batch_size : int
+    mongo_db: str
+    mongo_collection: str
+    elastic_index: str
+    batch_size: int
 
 
 class JobStatusResponse(BaseModel):
@@ -42,7 +42,6 @@ class JobStatusResponse(BaseModel):
 
 @app.post("/index", response_model=JobStatusResponse)
 async def start_indexer(request: IndexRequest):
-
     """
     start indexer job, return json response immediately
     """
@@ -59,10 +58,7 @@ async def start_indexer(request: IndexRequest):
     redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
     asyncio.create_task(run_indexer(job_id, request))
 
-    return JobStatusResponse(
-        job_id=job_id,
-        status="queued"
-    )
+    return JobStatusResponse(job_id=job_id, status="queued")
 
 
 @app.get("/status/{job_id}", response_model=JobStatusResponse)
@@ -79,9 +75,7 @@ async def get_status(job_id: str):
     logger.info(f"Job {job_id} status: {job_data['status']}")
 
     return JobStatusResponse(
-        job_id=job_id,
-        status=job_data["status"],
-        error=job_data["error"]
+        job_id=job_id, status=job_data["status"], error=job_data["error"]
     )
 
 
@@ -100,18 +94,20 @@ async def heartbeat(job_id):
             job_data_str = redis_client.get(f"job:{job_id}")
             if job_data_str:
                 job_data = json.loads(job_data_str)
-                job_data["last_heartbeat"] = datetime.datetime.now(datetime.UTC).isoformat()
+                job_data["last_heartbeat"] = datetime.datetime.now(
+                    datetime.UTC
+                ).isoformat()
                 job_data["memory_usage_mb"] = current_memory
                 redis_client.set(f"job:{job_id}", json.dumps(job_data), ex=7200)
-                logger.debug(f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB")
+                logger.debug(
+                    f"Heartbeat for job {job_id}: Memory usage {current_memory:.2f}MB"
+                )
         except Exception as e:
             logger.error(f"Error in heartbeat for job {job_id}: {str(e)}")
         await asyncio.sleep(30)
 
 
-
 async def run_indexer(job_id: str, request: IndexRequest):
-
 
     heartbeat_task = None
 
@@ -132,8 +128,9 @@ async def run_indexer(job_id: str, request: IndexRequest):
         heartbeat_task = asyncio.create_task(heartbeat(job_id))
 
         cmd = [
-            "bash", "-c",
-            f"cd /app/indexer && python mongo_to_elastic.py --mongo-db {request.mongo_db} --mongo-collection {request.mongo_collection} --elastic-index {request.elastic_index} --batch-size {request.batch_size}"
+            "bash",
+            "-c",
+            f"cd /app/indexer && python mongo_to_elastic.py --mongo-db {request.mongo_db} --mongo-collection {request.mongo_collection} --elastic-index {request.elastic_index} --batch-size {request.batch_size}",
         ]
 
         process = await asyncio.create_subprocess_exec(
@@ -189,7 +186,7 @@ async def run_indexer(job_id: str, request: IndexRequest):
                 pass
 
 
-
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=5000)

@@ -8,7 +8,7 @@
 <div class="menu-page">
     <h1 class="page-title">Web Sources</h1>
     <p class="page-description">Click on a source to search its crawled data</p>
-    
+
     <div class="sources-grid">
         {% for source in sources %}
         <a href="{% url source.url_name  %}" class="source-card">

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "menu.apps.MenuConfig",
     "source_wikipedia.apps.WikipediaConfig",
     "source_bbc.apps.SourceBBCConfig",
+    "custom_data_source.apps.CustomDataSourceConfig",
 ]
 
 MIDDLEWARE = [
@@ -101,7 +102,7 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "SERIALIZER": "django_redis.serializers.json.JSONSerializer",
         },
-        "KEY_PREFIX": "search"
+        "KEY_PREFIX": "search",
     }
 }
 
@@ -134,14 +135,14 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 # Where collectstatic will put files
-STATIC_ROOT = BASE_DIR / 'collected_static'
+STATIC_ROOT = BASE_DIR / "collected_static"
 
 # Additional locations the staticfiles app will traverse
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    BASE_DIR / "static",
 ]
 
 print(f"STATIC_URL: {STATIC_URL}")
@@ -151,8 +152,8 @@ print(f"STATICFILES_DIRS: {STATICFILES_DIRS}")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"

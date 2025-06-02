@@ -31,4 +31,3 @@ ENV MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_COLLECTION=articles
 
 CMD ["python", "/app/indexer/api.py"]
-

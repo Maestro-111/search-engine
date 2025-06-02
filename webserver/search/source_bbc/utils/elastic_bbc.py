@@ -10,20 +10,22 @@ class BBCElastic(BaseElastic):
             "query": {
                 "bool": {
                     "must": [
-                        {"multi_match": {
-                            "query": query,
-                            "fields": ["title^3", "summary^2", "content", "link_texts"]
-                        }}
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": [
+                                    "title^3",
+                                    "summary^2",
+                                    "content",
+                                    "link_texts",
+                                ],
+                            }
+                        }
                     ]
                 }
             },
-            "highlight": {
-                "fields": {
-                    "summary": {},
-                    "content": {}
-                }
-            },
-            "size": 100
+            "highlight": {"fields": {"summary": {}, "content": {}}},
+            "size": 100,
         }
 
         return search_body
@@ -43,7 +45,7 @@ class BBCElastic(BaseElastic):
 
         Your task:
         Identify key terms or phrases from the query and map them to our index fields:
-        - "title": Main topic or named entity likely to appear in the article title 
+        - "title": Main topic or named entity likely to appear in the article title
         - "content_keywords" : Extract important keywords that should be searched in the content and summary fields
 
         Format the response as a JSON object with these fields. If a field is not applicable, use an empty list or null.
@@ -64,12 +66,11 @@ class BBCElastic(BaseElastic):
         Ensure your extraction matches the semantic structure of our Elasticsearch index to optimize search results.
         """
 
-        self.logger.info(f"Built BBC prompt")
+        self.logger.info("Built BBC prompt")
 
         return prompt
 
     def build_elasticsearch_query_wiki(self, entities):
-
         """
         Build an Elasticsearch query using the extracted entities
         """
@@ -77,44 +78,38 @@ class BBCElastic(BaseElastic):
         must_clauses = []
 
         if entities.get("title"):
-            must_clauses.append({
-                "match_phrase": {
-                    "title": {
-                        "query": entities["title"],
-                        "boost": 5
-                    }
-                }
-            })
+            must_clauses.append(
+                {"match_phrase": {"title": {"query": entities["title"], "boost": 5}}}
+            )
 
         # Content keywords
         if entities.get("content_keywords") and len(entities["content_keywords"]) > 0:
             for keyword in entities["content_keywords"]:
-                should_clauses.append({
-                    "multi_match": {
-                        "query": keyword,
-                        "fields": ["content^2", "summary^3"],
-                        "type": "phrase"
+                should_clauses.append(
+                    {
+                        "multi_match": {
+                            "query": keyword,
+                            "fields": ["content^2", "summary^3"],
+                            "type": "phrase",
+                        }
                     }
-                })
+                )
 
         query = {
             "bool": {
                 "must": must_clauses if must_clauses else [{"match_all": {}}],
                 "should": should_clauses,
-                "minimum_should_match": 1 if should_clauses and not must_clauses else 0
+                "minimum_should_match": 1 if should_clauses and not must_clauses else 0,
             }
         }
 
         search_body = {
             "query": query,
-            "highlight": {
-                "fields": {
-                    "summary": {},
-                    "content": {}
-                }
-            },
-            "size": 100
+            "highlight": {"fields": {"summary": {}, "content": {}}},
+            "size": 100,
         }
 
-        self.logger.info(f"Built BBC Elasticsearch query: {json.dumps(search_body, indent=2)}")
+        self.logger.info(
+            f"Built BBC Elasticsearch query: {json.dumps(search_body, indent=2)}"
+        )
         return search_body

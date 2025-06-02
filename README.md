@@ -58,7 +58,5 @@ make prod build up
     1) first elastic ranks by additional fields
     2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
 2) unit testing for django (webserver)
-3) CI/CD 
-4) Improve indexer API (from dict to Redis, add healthcheck job)
-5) Custom source for indexing
-6) scale for crawling service
+3) CI
+4) Custom source for indexing

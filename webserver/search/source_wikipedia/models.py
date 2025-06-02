@@ -1,18 +1,15 @@
 from django.db import models
 
-# models.py in your Django app
-from django.db import models
-
 
 class CrawlJob(models.Model):
     STATUS_CHOICES = (
-        ('queued', 'Queued'),
-        ('running', 'Running'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ("queued", "Queued"),
+        ("running", "Running"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
     )
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="queued")
     starting_url = models.URLField()
     crawl_depth = models.IntegerField()
     max_pages = models.IntegerField()
@@ -31,14 +28,16 @@ class CrawlJob(models.Model):
 
 class IndexJob(models.Model):
     STATUS_CHOICES = (
-        ('queued', 'Queued'),
-        ('running', 'Running'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ("queued", "Queued"),
+        ("running", "Running"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
     )
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued')
-    crawl_job = models.ForeignKey(CrawlJob, on_delete=models.CASCADE, related_name='index_jobs')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="queued")
+    crawl_job = models.ForeignKey(
+        CrawlJob, on_delete=models.CASCADE, related_name="index_jobs"
+    )
     mongodb_db = models.CharField(max_length=100)
     mongodb_collection = models.CharField(max_length=100)
     elastic_index = models.CharField(max_length=100)

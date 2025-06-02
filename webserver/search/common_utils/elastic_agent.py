@@ -3,17 +3,18 @@ import os
 import openai
 import json
 
+
 class BaseElastic:
 
     def __init__(self, logger):
 
-        self.es = Elasticsearch([os.environ.get('ELASTICSEARCH_URI', 'http://elasticsearch:9200')])
+        self.es = Elasticsearch(
+            [os.environ.get("ELASTICSEARCH_URI", "http://elasticsearch:9200")]
+        )
         self.logger = logger
         openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-
     def extract_entities_with_openai(self, prompt):
-
         """
         Use OpenAI to extract structured entities from the user query
         """
@@ -34,7 +35,7 @@ class BaseElastic:
                 "title": None,
                 "content_keywords": [],
                 "categories": [],
-                "link_related": []
+                "link_related": [],
             }
 
     def process_elastic_response(self, search_results):
@@ -67,13 +68,15 @@ class BaseElastic:
                 else:
                     title = "Untitled Document"
 
-            raw_results.append({
-                "title": title,
-                "url": source["url"],
-                "excerpt": excerpt,
-                "categories": categories,
-                "last_updated": "N/A"
-            })
+            raw_results.append(
+                {
+                    "title": title,
+                    "url": source["url"],
+                    "excerpt": excerpt,
+                    "categories": categories,
+                    "last_updated": "N/A",
+                }
+            )
 
         if raw_results:
             self.logger.info(f"Processed {len(raw_results)} results")
@@ -81,11 +84,9 @@ class BaseElastic:
         else:
             self.logger.warn("No results")
 
-
         return raw_results
 
     def query_specified_fields(self, search_body, index):
-
         """
         Determine the entities and use them separately to query
         """
@@ -97,5 +98,3 @@ class BaseElastic:
             return []
 
         return self.process_elastic_response(search_results)
-
-

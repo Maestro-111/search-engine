@@ -1,0 +1,41 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0  # Use a specific version
+    hooks:
+      - id: trailing-whitespace
+        exclude: '.*(README\.md|docs/).*'
+        args: ['--markdown-linebreak-ext=md']
+      - id: end-of-file-fixer
+        exclude: '.*\.md'
+      - id: check-added-large-files
+        args: ['--maxkb=5000']
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [ flake8-bugbear ]
+        exclude: '.*/settings/.*|.*/migrations/.*|.*/tasks\.py$'
+        args: [ '--ignore=E203,E501,W503,E402' ]
+
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: v1.15.0
+#    hooks:
+#      - id: mypy
+#        args: [
+#          "--config-file=pyproject.toml",
+#          "--explicit-package-bases",
+#          "--ignore-missing-imports"
+#        ]
+#        additional_dependencies:
+#          - pandas-stubs
+#        language_version: python3.12
+
+# To run pre-commit in non-strict mode manually:
+#   pre-commit run --all-files --show-diff-on-failure || true
