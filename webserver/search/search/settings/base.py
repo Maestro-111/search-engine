@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "menu.apps.MenuConfig",
     "source_wikipedia.apps.WikipediaConfig",
     "source_bbc.apps.SourceBBCConfig",
+    "source_dota_buff.apps.SourceDotabuffConfig",
     "custom_data_source.apps.CustomDataSourceConfig",
 ]
 

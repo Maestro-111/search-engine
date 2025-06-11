@@ -13,7 +13,7 @@ from django.http import JsonResponse
 logger = logging.getLogger("webserver")
 
 
-def search_wikipedia(request):
+def wiki_search(request):
 
     query = ""
     results = []
@@ -66,10 +66,10 @@ def search_wikipedia(request):
             {
                 "query": query,
                 "results": result_data,
-                "has_next": results.has_next(),
-                "has_previous": results.has_previous(),
-                "page_number": results.number,
-                "num_pages": results.paginator.num_pages,
+                "has_next": results.has_next(),  # type: ignore
+                "has_previous": results.has_previous(),  # type: ignore
+                "page_number": results.number,  # type: ignore
+                "num_pages": results.paginator.num_pages,  # type: ignore
             }
         )
 
@@ -77,7 +77,7 @@ def search_wikipedia(request):
     return render(request, "source_wikipedia/wikipedia_search.html", context)
 
 
-def crawl_wikipedia(request):
+def wiki_crawl(request):
     if request.method == "POST":
         form = WikipediaCrawlForm(request.POST)
         if form.is_valid():

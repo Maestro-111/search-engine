@@ -2,8 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("search_bbc/", views.search_bbc, name="bbc_search"),
-    path("crawl_bbc/", views.crawl_bbc, name="bbc_crawl"),
+    path("bbc_search/", views.bbc_search, name="bbc_search"),
+    path("bbc_crawl/", views.bbc_crawl, name="bbc_crawl"),
     path(
         "bbc_crawl_status/<int:job_id>/",
         views.bbc_crawler_job_status,

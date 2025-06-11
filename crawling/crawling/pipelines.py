@@ -28,7 +28,7 @@ class MongoDBPipeline:
         self.db[self.collection_name].create_index("url", unique=True)
 
     def close_spider(self, spider):
-        self.client.close()
+        self.client.close()  # type: ignore
 
     def process_item(self, item, spider):
 
@@ -38,7 +38,7 @@ class MongoDBPipeline:
 
         try:
 
-            self.db[self.collection_name].update_one(
+            self.db[self.collection_name].update_one(  # type: ignore
                 {"url": adapter["url"]},  # Query for finding the document
                 {"$set": dict(adapter)},  # Update with new data
                 upsert=True,  # Insert if not exists

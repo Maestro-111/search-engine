@@ -2,8 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("search_wiki/", views.search_wikipedia, name="wiki_search"),
-    path("crawl_wiki/", views.crawl_wikipedia, name="wiki_crawl"),
+    path("wiki_search/", views.wiki_search, name="wiki_search"),
+    path("wiki_crawl/", views.wiki_crawl, name="wiki_crawl"),
     path(
         "wiki_crawl_status/<int:job_id>/",
         views.wiki_crawler_job_status,

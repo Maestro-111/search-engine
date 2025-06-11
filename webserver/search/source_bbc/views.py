@@ -12,7 +12,7 @@ from django.http import JsonResponse
 logger = logging.getLogger("webserver")
 
 
-def search_bbc(request):
+def bbc_search(request):
 
     query = ""
     results = []
@@ -64,15 +64,14 @@ def search_bbc(request):
             {
                 "query": query,
                 "results": result_data,
-                "has_next": results.has_next(),
-                "has_previous": results.has_previous(),
-                "page_number": results.number,
-                "num_pages": results.paginator.num_pages,
+                "has_next": results.has_next(),  # type: ignore
+                "has_previous": results.has_previous(),  # type: ignore
+                "page_number": results.number,  # type: ignore
+                "num_pages": results.paginator.num_pages,  # type: ignore
             }
         )
 
     context = {"query": query, "results": results}
-
     return render(request, "source_bbc/bbc_search.html", context)
 
 
@@ -88,7 +87,7 @@ def bbc_all_crawler_jobs(request):
     return render(request, "source_bbc/bbc_crawl_jobs.html", {"jobs": jobs_page})
 
 
-def crawl_bbc(request):
+def bbc_crawl(request):
 
     if request.method == "POST":
         form = BBCCrawlForm(request.POST)

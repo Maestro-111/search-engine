@@ -25,5 +25,6 @@ urlpatterns = [
     path("wikipedia/", include("source_wikipedia.urls")),
     path("health/", health_check, name="health_check"),
     path("bbc/", include("source_bbc.urls")),
+    path("dota_buff/", include("source_dota_buff.urls")),
     path("custom_data_source/", include("custom_data_source.urls")),
 ]

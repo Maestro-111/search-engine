@@ -24,18 +24,19 @@ repos:
         exclude: '.*/settings/.*|.*/migrations/.*|.*/tasks\.py$'
         args: [ '--ignore=E203,E501,W503,E402' ]
 
-#  - repo: https://github.com/pre-commit/mirrors-mypy
-#    rev: v1.15.0
-#    hooks:
-#      - id: mypy
-#        args: [
-#          "--config-file=pyproject.toml",
-#          "--explicit-package-bases",
-#          "--ignore-missing-imports"
-#        ]
-#        additional_dependencies:
-#          - pandas-stubs
-#        language_version: python3.12
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        args: [
+          "--config-file=pyproject.toml",
+          "--explicit-package-bases",
+          "--ignore-missing-imports"
+        ]
+        exclude: '.*/settings/.*|.*/migrations/.*|.*/tasks\.py$'
+        additional_dependencies:
+          - pandas-stubs
+        language_version: python3.12
 
 # To run pre-commit in non-strict mode manually:
 #   pre-commit run --all-files --show-diff-on-failure || true
