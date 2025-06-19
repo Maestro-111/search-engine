@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: indexer
+  name: indexer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: indexer
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: indexer
+    spec:
+      containers:
+        - env:
+            - name: ELASTICSEARCH_URI
+              value: http://elasticsearch:9200
+            - name: MONGODB_URI
+              value: mongodb://root:example@mongodb:27017/
+          image: search-engine-indexer:latest
+          name: indexer
+          stdin: true
+          tty: true
+      restartPolicy: Always
