@@ -1,0 +1,55 @@
+apiVersion: apps/v1,
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: webserver
+  name: webserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      io.kompose.service: webserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: webserver
+    spec:
+      containers:
+        - args:
+            - web
+          image: search-engine-webserver:latest
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:8000/health/
+            failureThreshold: 3
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 10
+          name: webserver
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /app/webserver/search
+              name: webserver-claim0
+            - mountPath: /app/webserver/search/collected_static
+              name: static-volume
+      restartPolicy: Always
+      volumes:
+        - name: webserver-claim0
+          persistentVolumeClaim:
+            claimName: webserver-claim0
+        - name: static-volume
+          persistentVolumeClaim:
+            claimName: static-volume

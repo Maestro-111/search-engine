@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: nginx-webserver
+  name: nginx-webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: nginx-webserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: nginx-webserver
+    spec:
+      containers:
+        - image: nginx:1.25-alpine
+          name: nginx-webserver
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /app/webserver/search/collected_static
+              name: static-volume
+            - mountPath: /etc/nginx/conf.d/default.conf
+              name: nginx-webserver-claim1
+      restartPolicy: Always
+      volumes:
+        - name: static-volume
+          persistentVolumeClaim:
+            claimName: static-volume
+        - name: nginx-webserver-claim1
+          persistentVolumeClaim:
+            claimName: nginx-webserver-claim1

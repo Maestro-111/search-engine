@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: crawler
+  name: crawler
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      io.kompose.service: crawler
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: crawler
+    spec:
+      containers:
+        - env:
+            - name: MONGODB_URI
+              value: mongodb://root:example@mongodb:27017/
+          image: search-engine-crawler:latest
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5000/health
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
+          name: crawler
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          resources:
+            limits:
+              memory: "4294967296"
+            requests:
+              memory: "1073741824"
+          stdin: true
+          tty: true
+          volumeMounts:
+            - mountPath: /app/crawling/crawling
+              name: crawler-claim0
+      restartPolicy: Always
+      volumes:
+        - name: crawler-claim0
+          persistentVolumeClaim:
+            claimName: crawler-claim0
