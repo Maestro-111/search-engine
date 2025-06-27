@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
-  labels:
-    io.kompose.service: webserver
   name: webserver
+  labels:
+    app: webserver
 spec:
   ports:
-    - name: "8000"
+    - name: "http"
+      port: 80
+      targetPort: 80
+    - name: "django-debug"
       port: 8000
       targetPort: 8000
   selector:
-    io.kompose.service: webserver
+    app: webserver

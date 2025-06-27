@@ -1,26 +1,19 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
-  labels:
-    io.kompose.service: mongodb
   name: mongodb
+  labels:
+    app: mongodb
 spec:
+  serviceName: "mongodb"
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: mongodb
-  strategy:
-    type: Recreate
+      app: mongodb
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.36.0 (HEAD)
       labels:
-        io.kompose.service: mongodb
+        app: mongodb
     spec:
       containers:
         - env:
@@ -28,7 +21,7 @@ spec:
               value: example
             - name: MONGO_INITDB_ROOT_USERNAME
               value: root
-          image: mongo:latest
+          image: mongo:7.0  # Use specific version instead of 'latest'
           name: mongodb
           ports:
             - containerPort: 27017
@@ -36,15 +29,12 @@ spec:
           volumeMounts:
             - mountPath: /data/db
               name: mongo-data
-            - mountPath: /docker-entrypoint-initdb.d/init-mongo.js
-              name: mongodb-claim1
-              readOnly: true
-      restartPolicy: Always
-      volumes:
-        - name: mongo-data
-          persistentVolumeClaim:
-            claimName: mongo-data
-        - name: mongodb-claim1
-          persistentVolumeClaim:
-            claimName: mongodb-claim1
-            readOnly: true
+
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi

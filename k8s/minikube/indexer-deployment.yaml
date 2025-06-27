@@ -1,24 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
   labels:
-    io.kompose.service: indexer
+    app: indexer
   name: indexer
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      io.kompose.service: indexer
+      app: indexer
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.36.0 (HEAD)
       labels:
-        io.kompose.service: indexer
+        app: indexer
     spec:
       containers:
         - env:
@@ -27,7 +21,22 @@ spec:
             - name: MONGODB_URI
               value: mongodb://root:example@mongodb:27017/
           image: search-engine-indexer:latest
+          imagePullPolicy: Never
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5000/health
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
           name: indexer
-          stdin: true
-          tty: true
-      restartPolicy: Always
+          ports:
+            - containerPort: 5000
+          resources:
+            limits:
+              memory: "4Gi"
+            requests:
+              memory: "1Gi"

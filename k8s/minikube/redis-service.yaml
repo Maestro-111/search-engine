@@ -1,16 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
-  labels:
-    io.kompose.service: redis
   name: redis
+  labels:
+    app: redis
 spec:
+  clusterIP: None  # Make it headless for StatefulSet
   ports:
     - name: "6379"
       port: 6379
       targetPort: 6379
   selector:
-    io.kompose.service: redis
+    app: redis  # This should match your StatefulSet labels
