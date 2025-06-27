@@ -1,55 +1,77 @@
-apiVersion: apps/v1,
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
   labels:
-    io.kompose.service: webserver
+    app: webserver
   name: webserver
 spec:
   replicas: 3
   selector:
     matchLabels:
-      io.kompose.service: webserver
-  strategy:
-    type: Recreate
+      app: webserver
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.36.0 (HEAD)
       labels:
-        io.kompose.service: webserver
+        app: webserver
     spec:
+      initContainers:
+      - name: collect-static
+        image: search-engine-webserver:latest
+        imagePullPolicy: Never
+        command: ['sh', '-c', 'cd /app/webserver/search && python manage.py collectstatic --noinput']
+        volumeMounts:
+        - name: static-files
+          mountPath: /app/webserver/search/collected_static
+
       containers:
-        - args:
-            - web
-          image: search-engine-webserver:latest
-          livenessProbe:
-            exec:
-              command:
-                - curl
-                - -f
-                - http://localhost:8000/health/
-            failureThreshold: 3
-            initialDelaySeconds: 40
-            periodSeconds: 30
-            timeoutSeconds: 10
-          name: webserver
-          ports:
-            - containerPort: 8000
-              protocol: TCP
-          volumeMounts:
-            - mountPath: /app/webserver/search
-              name: webserver-claim0
-            - mountPath: /app/webserver/search/collected_static
-              name: static-volume
-      restartPolicy: Always
+      - name: django
+        env:
+        - name: db_psw
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: db_user_name
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: name
+        - name: db_name
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: db_name
+        - name: db_host
+          value: "db"
+        - name: db_port
+          value: "5432"
+        args: [web]
+        image: search-engine-webserver:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            memory: "4Gi"
+          requests:
+            memory: "1Gi"
+        volumeMounts:
+        - name: static-files
+          mountPath: /app/webserver/search/collected_static
+
+      - name: nginx
+        image: nginx:1.25-alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: static-files
+          mountPath: /app/webserver/search/collected_static
+        - name: nginx-webserver-config
+          mountPath: /etc/nginx/conf.d
+
       volumes:
-        - name: webserver-claim0
-          persistentVolumeClaim:
-            claimName: webserver-claim0
-        - name: static-volume
-          persistentVolumeClaim:
-            claimName: static-volume
+      - name: static-files
+        emptyDir: {}
+      - name: nginx-webserver-config
+        configMap:
+          name: nginx-webserver-config
