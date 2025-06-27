@@ -18,3 +18,5 @@ collected_static/
 .env
 .DS_Store/
 .DS_Store
+
+*-secret.yaml

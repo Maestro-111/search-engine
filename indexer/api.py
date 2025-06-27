@@ -186,6 +186,12 @@ async def run_indexer(job_id: str, request: IndexRequest):
                 pass
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for load balancer."""
+    return {"status": "healthy"}
+
+
 if __name__ == "__main__":
     import uvicorn
 
