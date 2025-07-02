@@ -119,7 +119,7 @@ def run_crawl_job(job_id):
 
         # Call the crawler API to start the job
         response = requests.post(
-            "http://nginx_crawler:80/crawl/",
+            "http://crawler:5000/crawl/",  # ATTENTION! change to nginx_crawler:80 if you run webserver with compose. change to crawler:5000 if k8s is used
             json={
                 "starting_url": job.starting_url,
                 "crawl_depth": job.crawl_depth,
@@ -168,7 +168,7 @@ def check_crawl_status(job_id, crawler_job_id):
 
     try:
         response = requests.get(
-            f"http://nginx_crawler:80/status/{crawler_job_id}", timeout=10
+            f"http://crawler:5000/status/{crawler_job_id}", timeout=10
         )
 
         if response.status_code == 200:

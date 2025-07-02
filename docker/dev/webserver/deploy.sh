@@ -10,7 +10,7 @@ cp ../../../.env ./
 cp ../../../Makefile ./
 
 echo "Building Docker image..."
-docker build -t $IMAGE_NAME:latest .
+docker build --no-cache -t $IMAGE_NAME:latest .
 
 rm -r ./webserver
 rm pyproject.toml
