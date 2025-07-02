@@ -53,3 +53,4 @@ make prod build up
 3) CI (cont)
 4) Custom source for indexing (cont)
 5) k8s file for GKE
+6) configure help for easier k8s app run 
