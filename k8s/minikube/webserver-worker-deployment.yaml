@@ -1,40 +1,57 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
   labels:
-    io.kompose.service: webserver-worker
+    app: webserver-worker
   name: webserver-worker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: webserver-worker
-  strategy:
-    type: Recreate
+      app: webserver-worker
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.36.0 (HEAD)
       labels:
-        io.kompose.service: webserver-worker
+        app: webserver-worker
     spec:
       containers:
         - args:
             - webserver_worker
-          env:
-            - name: MONGODB_URI
-              value: mongodb://root:example@mongodb:27017/
           image: search-engine-webserver:latest
           name: webserver-worker
-          volumeMounts:
-            - mountPath: /app/webserver/search
-              name: webserver-worker-claim1
-      restartPolicy: Always
-      volumes:
-        - name: webserver-worker-claim1
-          persistentVolumeClaim:
-            claimName: webserver-worker-claim1
+          imagePullPolicy: Never
+          env:
+            - name: db_psw
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: db_user_name
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: name
+            - name: db_name
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: db_name
+            - name: db_host
+              value: "db"
+            - name: db_port
+              value: "5432"
+          livenessProbe:
+            exec:
+              command:
+                - celery
+                - -A
+                - search
+                - inspect
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: "4Gi"
+            requests:
+              memory: "1Gi"

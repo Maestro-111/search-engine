@@ -1,34 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
-  labels:
-    io.kompose.service: flower
   name: flower
+  labels:
+    app: flower
 spec:
-  replicas: 1
+  replicas: 1  # Usually just 1 replica for admin tools
   selector:
     matchLabels:
-      io.kompose.service: flower
+      app: flower
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.36.0 (HEAD)
       labels:
-        io.kompose.service: flower
+        app: flower
     spec:
       containers:
-        - env:
-            - name: CELERY_BROKER_URL
-              value: redis://redis:6379/0
-            - name: FLOWER_PORT
-              value: "5555"
-          image: mher/flower
-          name: flower
-          ports:
-            - containerPort: 5555
-              protocol: TCP
-      restartPolicy: Always
+      - name: flower
+        image: mher/flower:latest
+        ports:
+        - containerPort: 5555
+        env:
+        - name: CELERY_BROKER_URL
+          value: "redis://redis:6379/0"
+        - name: FLOWER_PORT
+          value: "5555"
+        resources:
+          limits:
+            memory: "256Mi"
+          requests:
+            memory: "128Mi"

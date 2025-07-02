@@ -15,6 +15,30 @@ spec:
         app: webserver
     spec:
       initContainers:
+      - name: migrate
+        image: search-engine-webserver:latest
+        imagePullPolicy: Never
+        command: [ 'sh', '-c', 'cd /app/webserver/search && python manage.py migrate' ]
+        env:
+          - name: db_psw
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: password
+          - name: db_user_name
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: name
+          - name: db_name
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: db_name
+          - name: db_host
+            value: "db"
+          - name: db_port
+            value: "5432"
       - name: collect-static
         image: search-engine-webserver:latest
         imagePullPolicy: Never

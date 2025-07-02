@@ -1,32 +1,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.36.0 (HEAD)
-  labels:
-    io.kompose.service: kibana
   name: kibana
+  labels:
+    app: kibana
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: kibana
+      app: kibana
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.36.0 (HEAD)
       labels:
-        io.kompose.service: kibana
+        app: kibana
     spec:
       containers:
-        - env:
-            - name: ELASTICSEARCH_HOSTS
-              value: http://elasticsearch:9200
-          image: docker.elastic.co/kibana/kibana:8.12.1
-          name: kibana
-          ports:
-            - containerPort: 5601
-              protocol: TCP
-      restartPolicy: Always
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:8.12.1
+        ports:
+        - containerPort: 5601
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch:9200"
+        - name: ELASTICSEARCH_USERNAME
+          value: "kibana_system"  # If using security
+        - name: ELASTICSEARCH_PASSWORD
+          value: "password"      # Better to use Secret
+        resources:
+          limits:
+            memory: "1Gi"
+          requests:
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 30
+          periodSeconds: 10
