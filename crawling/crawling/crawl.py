@@ -7,7 +7,9 @@ from scrapy.utils.project import get_project_settings
 from spiders.wikipedia import WikipediaSpider
 from spiders.reddit import RedditSpider
 from spiders.bbc import BBCSpider
-from spiders.dota_buff import DotabuffSpider
+
+# from spiders.dota_buff import DotabuffMatchSpider
+from spiders.dota_api import OpenDotaCollector
 
 
 class SpiderNotImplenetedException(Exception):
@@ -21,7 +23,7 @@ def main():
     parser.add_argument(
         "--seed-url",
         type=str,
-        default="https://en.wikipedia.org/wiki/",
+        default="",
         help="Starting URL for the crawler",
     )
     parser.add_argument(
@@ -102,9 +104,27 @@ def main():
         process.crawl(BBCSpider, start_urls=[args.seed_url])
         process.start()
     elif args.spider_name == "dota_spider":
-        process = CrawlerProcess(settings)
-        process.crawl(DotabuffSpider, start_urls=[args.seed_url])
-        process.start()
+
+        collector = OpenDotaCollector(
+            mongo_uri=args.mongo_uri,
+            db_name=args.mongo_db,
+            collection_name=args.mongo_collection,
+        )
+
+        collector.collect_hero_data()
+        collector.collect_matches()
+
+        stats = collector.get_match_statistics()
+        hero_winrates = collector.get_hero_winrates()
+
+        print(f"Match statistics: {stats}")
+
+        print("Top 5 heroes by winrate:")
+        for hero in hero_winrates[:5]:
+            print(
+                f"Hero {hero['hero_id']}: {hero['winrate']:.2%} ({hero['matches']} matches)"
+            )
+
     else:
         raise SpiderNotImplenetedException(
             "Spider name '{}' not implemented".format(args.spider_name)

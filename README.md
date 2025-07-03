@@ -5,8 +5,7 @@
 This project is a scalable search engine system with web crawling, data indexing, and a web interface.
 It's built using a microservices architecture with Docker Compose for easy deployment.
 
-You can also use local k8s cluster with minikube to deploy the app (under development).
-
+You can also use local k8s cluster (like minikube) to deploy the app.
 You can index existing data sources (whatever is available on the menu tab) or upload your own data source (tbd)
 
 ![Project Introduction](icons/intro.gif)
@@ -54,3 +53,5 @@ make prod build up
 4) Custom source for indexing (cont)
 5) k8s file for GKE
 6) configure help for easier k8s app run 
+7) configure jobs for k8s to run crawl/index on schedule
+8) dotabuff match simulator (cont)
