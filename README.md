@@ -55,3 +55,4 @@ make prod build up
 6) configure help for easier k8s app run 
 7) configure jobs for k8s to run crawl/index on schedule
 8) dotabuff match simulator (cont)
+9) JWT instead of default session auth

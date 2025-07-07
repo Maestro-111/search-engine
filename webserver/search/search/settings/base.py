@@ -23,6 +23,8 @@ print(f"BASE_DIR: {BASE_DIR}")
 
 SECRET_KEY = "django-insecure-6g^+^!!r=j8ks%un9t#)a0ztc=$5k1mklav0u3k*mp_sor*0zh"
 
+JWT_KEY = os.getenv("JWT_KEY")
+
 
 ALLOWED_HOSTS = ["*"]
 
@@ -46,6 +48,7 @@ INSTALLED_APPS = [
     "source_bbc.apps.SourceBBCConfig",
     "source_dota_buff.apps.SourceDotabuffConfig",
     "custom_data_source.apps.CustomDataSourceConfig",
+    "user.apps.UserConfig",
 ]
 
 MIDDLEWARE = [
@@ -56,6 +59,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "common_utils.jwt_middleware.JWTAuthenticationMiddleware",
 ]
 
 ROOT_URLCONF = "search.urls"
