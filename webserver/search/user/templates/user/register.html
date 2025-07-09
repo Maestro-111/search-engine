@@ -1,0 +1,33 @@
+{% extends 'base_display.html' %}
+{% load static %}
+
+{% block title %}Registration Page{% endblock %}
+
+{% block content %}
+<form id="registerForm">
+    <h2>Register</h2>
+
+    <div>
+        <label>Username:</label>
+        <input type="text" id="username" required>
+    </div>
+
+    <div>
+        <label>Email:</label>
+        <input type="email" id="email" required>
+    </div>
+
+    <div>
+        <label>Password:</label>
+        <input type="password" id="password" required>
+    </div>
+
+    <button type="submit">Register</button>
+    <div id="message"></div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'user/js/register.js' %}"></script>
+<script src="{% static 'user/js/auth.js' %}"></script>
+{% endblock %}

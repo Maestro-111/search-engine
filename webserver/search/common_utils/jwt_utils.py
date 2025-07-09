@@ -1,8 +1,7 @@
 # jwt_utils.py
 import jwt
-from datetime import datetime, timedelta
 from django.conf import settings
-
+import time
 from django.contrib.auth.models import User
 
 
@@ -13,20 +12,24 @@ class JWTUtils:
 
         # Access token payload
 
+        now = int(time.time())
+        access_exp = now + (60 * 60)  # 1 hour from now
+        refresh_exp = now + (7 * 24 * 60 * 60)  # 7 days from now
+
         access_payload = {
             "user_id": user.id,
             "username": user.username,
             "email": user.email,
-            "exp": datetime.now() + timedelta(minutes=60),  # 1 hour
-            "iat": datetime.now(),
+            "exp": access_exp,
+            "iat": now,
             "type": "access",
         }
 
         # Refresh token payload
         refresh_payload = {
             "user_id": user.id,
-            "exp": datetime.now() + timedelta(days=7),  # 7 days
-            "iat": datetime.now(),
+            "exp": refresh_exp,
+            "iat": now,
             "type": "refresh",
         }
 
@@ -37,7 +40,7 @@ class JWTUtils:
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
-            "expires_in": 3600,  # 1 hour in seconds
+            "expires_in": 3600,
         }
 
     @staticmethod
@@ -60,18 +63,19 @@ class JWTUtils:
             if payload.get("type") != "refresh":
                 return {"error": "Invalid refresh token"}
 
-            # Get user
-            user = User.objects.get(id=payload["user_id"])
+            now = int(time.time())
 
-            # Generate new access token
             access_payload = {
-                "user_id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "exp": datetime.now() + timedelta(minutes=60),
-                "iat": datetime.now(),
+                "exp": now + (60 * 60),  # 1 hour from now
+                "iat": now,
                 "type": "access",
             }
+
+            user = User.objects.get(id=payload["user_id"])
+
+            access_payload["user_id"] = user.id
+            access_payload["username"] = user.username
+            access_payload["email"] = user.email
 
             access_token = jwt.encode(
                 access_payload, settings.JWT_KEY, algorithm="HS256"

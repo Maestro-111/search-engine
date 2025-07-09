@@ -20,7 +20,9 @@ You can index existing data sources (whatever is available on the menu tab) or u
 
 We use LLM (gpt-4) to break down the request to search engine from user into entities and pass them to elastic client for more accurate mapping.
 
+## Auth
 
+**JWT**: Currently, we are testing/developing JWT based auth instead of django default sessions auth. User will be able to log in and see their personal profile. Tokens will be stored in the browser as this is not a real production app.
 
 ## Set up with Docker
 
@@ -44,7 +46,6 @@ make prod build up
 
 ## TO DO:
 
-
 1) how to rank elastic response?
     1) first elastic ranks by additional fields
     2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
@@ -56,3 +57,5 @@ make prod build up
 7) configure jobs for k8s to run crawl/index on schedule
 8) dotabuff match simulator (cont)
 9) JWT instead of default session auth
+   1) Add nav links for auth/ resources
+   2) better UI for auth

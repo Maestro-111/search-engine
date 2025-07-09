@@ -9,10 +9,12 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
 
-        print("JWTAuthenticationMiddleware!!!")
-        print(request.path, "current path")
-
-        skip_paths = ["/auth/login/", "/auth/refresh/", "/auth/register/"]
+        skip_paths = [
+            "/auth/login/",
+            "/auth/refresh/",
+            "/auth/register/",
+            "/auth/user/profile/",
+        ]  # mind the path end?
 
         if any(request.path.startswith(path) for path in skip_paths):
             return None

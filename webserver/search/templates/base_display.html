@@ -7,12 +7,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Web Crawler Search App{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base_user.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header>
         <h1>{% block header %}Welcome!{% endblock %}</h1>
     </header>
+
+    <div class="user-section">
+        <div id="user-info" style="display: none;">
+            <span>Hello, <strong id="current-username"></strong>!</span>
+            <a href="/auth/user/profile/" class="profile-btn">View Profile</a>
+            <button id="logout-btn" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <div id="login-section" style="display: none;">
+        <a href="/auth/login/" class="login-btn">Login</a>
+        <a href="/auth/register/" class="register-btn">Register</a>
+    </div>
 
     <main class="content">
         <div class="container">
@@ -28,6 +42,8 @@
     </footer>
 
     <script src="{% static 'js/base.js' %}"></script>
+    <script src="{% static 'js/user.js' %}"></script>
+    <script src="{% static 'user/js/auth.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
 </body>
