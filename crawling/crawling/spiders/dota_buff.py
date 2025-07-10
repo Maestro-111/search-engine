@@ -1,178 +1,316 @@
 import scrapy
-from urllib.parse import urljoin, urlparse
 import re
+from datetime import datetime
 
 
-class DotabuffSpider(scrapy.Spider):
+class DotabuffMatchSpider(scrapy.Spider):
 
-    name = "dotabuff"
+    name = "dotabuff_matches"
     allowed_domains = ["dotabuff.com"]
-    # start_urls = ['https://www.dotabuff.com/']
 
-    # Add some headers to avoid being blocked
+    # Start with recent matches and hero pages
+    start_urls = [
+        "https://www.dotabuff.com/matches",
+        "https://www.dotabuff.com/heroes",
+        "https://www.dotabuff.com/heroes/meta",
+        "https://www.dotabuff.com/heroes/winning",
+    ]
+
     custom_settings = {
         "ROBOTSTXT_OBEY": True,
         "DOWNLOAD_DELAY": 1,
-        "RANDOMIZE_DOWNLOAD_DELAY": True,
-        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "crawling.pipelines.DotabuffMongoPipeline": 100,
+        "DEPTH_LIMIT": 5,
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.matches_crawled = 0
+        self.max_matches = 10000  # Limit for initial crawl
+
     def parse(self, response):
-        """Parse the main page and extract initial links"""
-        # Extract page content
-        yield self.extract_page_data(response)
+        """Route to appropriate parser based on URL"""
+        if "/matches" in response.url and "/matches/" not in response.url:
+            yield from self.parse_matches_list(response)
+        elif "/heroes" in response.url and "/heroes/" not in response.url:
+            yield from self.parse_heroes_list(response)
+        elif "/matches/" in response.url:
+            yield from self.parse_match_detail(response)
+        elif "/heroes/" in response.url:
+            yield from self.parse_hero_detail(response)
 
-        # Find all internal links to crawl
-        links = response.css("a::attr(href)").getall()
+    def parse_matches_list(self, response):
+        """Parse matches list page"""
+        # Extract match links
+        match_links = response.css('a[href*="/matches/"]::attr(href)').getall()
 
-        for link in links:
-            if link:
-                full_url = urljoin(response.url, link)
-                if self.is_valid_url(full_url):
-                    yield response.follow(link, self.parse_page)
+        for link in match_links[:50]:  # Limit per page
+            if self.matches_crawled < self.max_matches:
+                self.matches_crawled += 1
+                yield response.follow(link, self.parse_match_detail)
 
-    def parse_page(self, response):
-        """Parse individual pages"""
-        yield self.extract_page_data(response)
+        # Follow pagination
+        next_page = response.css("a.next::attr(href)").get()
+        if next_page and self.matches_crawled < self.max_matches:
+            yield response.follow(next_page, self.parse_matches_list)
 
-        # Continue following links with depth limit
-        if response.meta.get("depth", 0) < 3:  # Limit crawl depth
-            links = response.css("a::attr(href)").getall()
+    def parse_heroes_list(self, response):
+        """Parse heroes list page"""
+        hero_links = response.css('a[href*="/heroes/"]::attr(href)').getall()
 
-            for link in links:
-                if link:
-                    full_url = urljoin(response.url, link)
-                    if self.is_valid_url(full_url):
-                        yield response.follow(link, self.parse_page)
+        for link in hero_links:
+            if re.match(r"/heroes/[a-z-]+$", link):  # Only hero detail pages
+                yield response.follow(link, self.parse_hero_detail)
 
-    def extract_page_data(self, response):
-        """Extract structured data from any page"""
-        return {
+    def parse_match_detail(self, response):
+        """Extract detailed match data"""
+        match_id = self.extract_match_id(response.url)
+
+        match_data = {
+            "type": "match",
+            "match_id": match_id,
             "url": response.url,
-            "title": response.css("title::text").get(),
-            "meta_description": response.css(
-                'meta[name="description"]::attr(content)'
-            ).get(),
-            "h1": response.css("h1::text").getall(),
-            "h2": response.css("h2::text").getall(),
-            "h3": response.css("h3::text").getall(),
-            "content": self.extract_text_content(response),
-            "page_type": self.determine_page_type(response.url),
-            "data_attributes": self.extract_data_attributes(response),
-            "tables": self.extract_tables(response),
-            "stats": self.extract_stats(response),
+            "timestamp": datetime.utcnow().isoformat(),
+            # Match info
+            "duration": self.extract_duration(response),
+            "game_mode": response.css(".game-mode::text").get(),
+            "skill_bracket": response.css(".skill-bracket::text").get(),
+            "region": response.css(".region::text").get(),
+            "patch": response.css(".patch::text").get(),
+            # Teams
+            "radiant": self.extract_team_data(response, "radiant"),
+            "dire": self.extract_team_data(response, "dire"),
+            # Result
+            "winner": self.extract_winner(response),
+            # Additional stats
+            "first_blood_time": self.extract_stat(response, "first-blood"),
+            "total_kills": self.extract_total_kills(response),
         }
 
-    def extract_text_content(self, response):
-        """Extract clean text content from the page"""
-        # Remove script and style elements
-        text_elements = response.css(
-            "p::text, div::text, span::text, td::text, th::text"
+        yield match_data
+
+    def parse_hero_detail(self, response):
+        """Extract hero statistics and matchup data"""
+        hero_name = self.extract_hero_name(response.url)
+
+        hero_data = {
+            "type": "hero",
+            "hero_name": hero_name,
+            "url": response.url,
+            "timestamp": datetime.utcnow().isoformat(),
+            # General stats
+            "win_rate": self.extract_percentage(response, "win-rate"),
+            "pick_rate": self.extract_percentage(response, "pick-rate"),
+            "ban_rate": self.extract_percentage(response, "ban-rate"),
+            # Role info
+            "roles": response.css(".hero-roles span::text").getall(),
+            "lane_presence": self.extract_lane_presence(response),
+            # Matchups
+            "best_versus": self.extract_matchups(response, "best-versus"),
+            "worst_versus": self.extract_matchups(response, "worst-versus"),
+            # Item builds
+            "popular_items": self.extract_items(response, "popular"),
+            "winning_items": self.extract_items(response, "winning"),
+            # Ability builds
+            "ability_builds": self.extract_ability_builds(response),
+            # Stats by skill bracket
+            "stats_by_bracket": self.extract_stats_by_bracket(response),
+        }
+
+        yield hero_data
+
+        # Follow matchup links for more detailed data
+        matchup_links = response.css(
+            'a[href*="/heroes/"][href*="/matchups"]::attr(href)'
         ).getall()
+        for link in matchup_links[:5]:  # Limit to avoid too many requests
+            yield response.follow(link, self.parse_hero_matchups)
 
-        # Clean and filter text
-        clean_text = []
-        for text in text_elements:
-            cleaned = text.strip()
-            if cleaned and len(cleaned) > 2:  # Filter out very short strings
-                clean_text.append(cleaned)
+    def parse_hero_matchups(self, response):
+        """Parse detailed hero matchup page"""
+        hero_name = self.extract_hero_name(response.url)
 
-        return " ".join(clean_text)
+        matchup_data = {
+            "type": "hero_matchups",
+            "hero_name": hero_name,
+            "url": response.url,
+            "timestamp": datetime.utcnow().isoformat(),
+            "matchups": [],
+        }
 
-    def determine_page_type(self, url):
-        """Determine what type of page this is based on URL patterns"""
-        if "/players/" in url:
-            return "player"
-        elif "/matches/" in url:
-            return "match"
-        elif "/heroes/" in url:
-            return "hero"
-        elif "/esports/" in url:
-            return "esports"
-        elif "/meta/" in url:
-            return "meta"
-        else:
-            return "general"
+        # Extract all matchup rows
+        for row in response.css("table.matchups tr"):
+            opponent = row.css("td.cell-xlarge a::text").get()
+            if opponent:
+                matchup_data["matchups"].append(
+                    {
+                        "opponent": opponent,
+                        "advantage": row.css("td[data-value]::attr(data-value)").get(),
+                        "win_rate": row.css("td:nth-child(3)::text").get(),
+                        "matches_played": row.css("td:nth-child(4)::text").get(),
+                    }
+                )
 
-    def extract_data_attributes(self, response):
-        """Extract data attributes that might contain structured info"""
-        data_attrs = {}
+        yield matchup_data
 
-        # Look for elements with data-* attributes
-        elements_with_data = response.xpath('//*[@*[starts-with(name(), "data-")]]')
+    def extract_team_data(self, response, team):
+        """Extract data for one team (radiant/dire)"""
+        team_selector = f".team-{team}"
 
-        for element in elements_with_data:
-            attrs = element.attrib
-            for key, value in attrs.items():
-                if key.startswith("data-"):
-                    data_attrs[key] = value
+        players = []
+        for player_row in response.css(f"{team_selector} tbody tr"):
+            player_data = {
+                "hero": player_row.css("td.cell-xlarge a::text").get(),
+                "player_name": player_row.css("td.tf-pl a::text").get(),
+                "level": player_row.css("td.r-tab::text").get(),
+                "kills": player_row.css("td.r-tab:nth-child(3)::text").get(),
+                "deaths": player_row.css("td.r-tab:nth-child(4)::text").get(),
+                "assists": player_row.css("td.r-tab:nth-child(5)::text").get(),
+                "gold": player_row.css("td.r-tab:nth-child(6)::text").get(),
+                "last_hits": player_row.css("td.r-tab:nth-child(7)::text").get(),
+                "denies": player_row.css("td.r-tab:nth-child(8)::text").get(),
+                "gpm": player_row.css("td.r-tab:nth-child(9)::text").get(),
+                "xpm": player_row.css("td.r-tab:nth-child(10)::text").get(),
+                "items": self.extract_player_items(player_row),
+            }
+            players.append(player_data)
 
-        return data_attrs
+        return {
+            "players": players,
+            "total_kills": response.css(
+                f"{team_selector} .team-results span.kills::text"
+            ).get(),
+            "total_gold": response.css(
+                f"{team_selector} .team-results span.gold::text"
+            ).get(),
+            "total_xp": response.css(
+                f"{team_selector} .team-results span.xp::text"
+            ).get(),
+        }
 
-    def extract_tables(self, response):
-        """Extract table data"""
-        tables = []
+    def extract_player_items(self, player_row):
+        """Extract items for a player"""
+        items = []
+        for item in player_row.css(".items img"):
+            item_name = item.css("::attr(alt)").get()
+            if item_name:
+                items.append(item_name)
+        return items
 
-        for table in response.css("table"):
-            table_data = {"headers": table.css("th::text").getall(), "rows": []}
+    def extract_matchups(self, response, matchup_type):
+        """Extract hero matchup data"""
+        matchups = []
+        selector = f".{matchup_type} tr"
 
-            for row in table.css("tr"):
-                cells = row.css("td::text").getall()
-                if cells:
-                    table_data["rows"].append(cells)
+        for row in response.css(selector)[:10]:  # Top 10
+            hero = row.css("td.cell-xlarge a::text").get()
+            advantage = row.css("td[data-value]::attr(data-value)").get()
+            if hero and advantage:
+                matchups.append(
+                    {"hero": hero, "advantage": float(advantage) if advantage else 0}
+                )
 
-            if table_data["headers"] or table_data["rows"]:
-                tables.append(table_data)
+        return matchups
 
-        return tables
+    def extract_items(self, response, item_type):
+        """Extract item build data"""
+        items = []
+        selector = f".{item_type}-items .item"
 
-    def extract_stats(self, response):
-        """Extract numerical stats and metrics"""
+        for item in response.css(selector):
+            item_name = item.css("img::attr(alt)").get()
+            usage_rate = item.css(".usage::text").get()
+            if item_name:
+                items.append({"name": item_name, "usage_rate": usage_rate})
+
+        return items
+
+    def extract_ability_builds(self, response):
+        """Extract ability build orders"""
+        builds = []
+
+        for build in response.css(".ability-build"):
+            build_data = {
+                "usage_rate": build.css(".usage::text").get(),
+                "win_rate": build.css(".win-rate::text").get(),
+                "build_order": build.css(".ability::attr(alt)").getall(),
+            }
+            builds.append(build_data)
+
+        return builds
+
+    def extract_stats_by_bracket(self, response):
+        """Extract statistics by skill bracket"""
         stats = {}
 
-        # Look for common stat patterns
-        stat_elements = response.css(".stat, .number, .percentage, .value")
-
-        for element in stat_elements:
-            text = element.css("::text").get()
-            if text:
-                # Try to extract numbers
-                numbers = re.findall(r"\d+(?:\.\d+)?%?", text.strip())
-                if numbers:
-                    label = (
-                        element.css("::attr(title)").get()
-                        or element.css("::attr(data-tooltip)").get()
-                    )
-                    if label:
-                        stats[label] = numbers
+        for row in response.css(".bracket-stats tr"):
+            bracket = row.css("td:first-child::text").get()
+            if bracket:
+                stats[bracket] = {
+                    "pick_rate": row.css("td:nth-child(2)::text").get(),
+                    "win_rate": row.css("td:nth-child(3)::text").get(),
+                    "kda": row.css("td:nth-child(4)::text").get(),
+                }
 
         return stats
 
-    def is_valid_url(self, url):
-        """Check if URL should be crawled"""
-        parsed = urlparse(url)
+    def extract_lane_presence(self, response):
+        """Extract lane presence data"""
+        lanes = {}
 
-        # Only crawl dotabuff.com
-        if parsed.netloc != "www.dotabuff.com" and parsed.netloc != "dotabuff.com":
-            return False
+        for lane in ["safe", "mid", "off", "jungle", "roaming"]:
+            presence = response.css(f".lane-{lane} .presence::text").get()
+            if presence:
+                lanes[lane] = presence
 
-        # Skip certain file types
-        skip_extensions = [
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".gif",
-            ".pdf",
-            ".zip",
-            ".css",
-            ".js",
-        ]
-        if any(url.lower().endswith(ext) for ext in skip_extensions):
-            return False
+        return lanes
 
-        # Skip certain paths that might not be useful
-        skip_paths = ["/api/", "/ajax/", "/assets/"]
-        if any(skip_path in url for skip_path in skip_paths):
-            return False
+    # Utility methods
+    def extract_match_id(self, url):
+        """Extract match ID from URL"""
+        match = re.search(r"/matches/(\d+)", url)
+        return match.group(1) if match else None
 
-        return True
+    def extract_hero_name(self, url):
+        """Extract hero name from URL"""
+        match = re.search(r"/heroes/([a-z-]+)", url)
+        return match.group(1) if match else None
+
+    def extract_duration(self, response):
+        """Extract match duration"""
+        duration = response.css(".duration::text").get()
+        if duration:
+            # Convert MM:SS to seconds
+            parts = duration.split(":")
+            if len(parts) == 2:
+                return int(parts[0]) * 60 + int(parts[1])
+        return None
+
+    def extract_winner(self, response):
+        """Determine match winner"""
+        radiant_win = response.css(".radiant.winner").get()
+        if radiant_win:
+            return "radiant"
+        dire_win = response.css(".dire.winner").get()
+        if dire_win:
+            return "dire"
+        return None
+
+    def extract_percentage(self, response, stat_type):
+        """Extract percentage values"""
+        value = response.css(f".{stat_type}::text").re_first(r"([\d.]+)%")
+        return float(value) if value else None
+
+    def extract_stat(self, response, stat_name):
+        """Extract generic stat value"""
+        return response.css(f".{stat_name}::text").get()
+
+    def extract_total_kills(self, response):
+        """Extract total kills in match"""
+        radiant_kills = response.css(".radiant .kills::text").get()
+        dire_kills = response.css(".dire .kills::text").get()
+
+        if radiant_kills and dire_kills:
+            return int(radiant_kills) + int(dire_kills)
+        return None

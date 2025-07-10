@@ -150,12 +150,21 @@ async def run_crawl(job_id: str, request: CrawlRequest):
 
         max_runtime = 7200  # seconds
 
-        cmd = [
-            "bash",
-            "-c",
-            f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db "
-            f"{request.mongo_db} --mongo-collection {request.mongodb_collection} --spider-name {request.spider_name}",
-        ]
+        if (
+            request.spider_name == "dota_spider"
+        ):  # not really a crawl - just collect the needed info
+            cmd = [
+                "bash",
+                "-c",
+                f"cd /app/crawling && python crawling/crawl.py --mongo-db {request.mongo_db} --mongo-collection {request.mongodb_collection} --spider-name {request.spider_name}",
+            ]
+        else:
+            cmd = [
+                "bash",
+                "-c",
+                f"cd /app/crawling && python crawling/crawl.py --seed-url {request.starting_url} --depth-limit {request.crawl_depth} --page-limit {request.max_pages} --mongo-db "
+                f"{request.mongo_db} --mongo-collection {request.mongodb_collection} --spider-name {request.spider_name}",
+            ]
 
         logger.info(f"Starting crawl job {job_id} with command: {cmd}")
         logger.info(f"Memory usage before starting crawler: {get_memory_usage():.2f}MB")

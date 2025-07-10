@@ -5,8 +5,7 @@
 This project is a scalable search engine system with web crawling, data indexing, and a web interface.
 It's built using a microservices architecture with Docker Compose for easy deployment.
 
-You can also use local k8s cluster with minikube to deploy the app (under development).
-
+You can also use local k8s cluster (like minikube) to deploy the app.
 You can index existing data sources (whatever is available on the menu tab) or upload your own data source (tbd)
 
 ![Project Introduction](icons/intro.gif)
@@ -21,7 +20,9 @@ You can index existing data sources (whatever is available on the menu tab) or u
 
 We use LLM (gpt-4) to break down the request to search engine from user into entities and pass them to elastic client for more accurate mapping.
 
+## Auth
 
+**JWT**: Currently, we are testing/developing JWT based auth instead of django default sessions auth. User will be able to log in and see their personal profile. Tokens will be stored in the browser as this is not a real production app.
 
 ## Set up with Docker
 
@@ -45,7 +46,6 @@ make prod build up
 
 ## TO DO:
 
-
 1) how to rank elastic response?
     1) first elastic ranks by additional fields
     2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
@@ -53,4 +53,8 @@ make prod build up
 3) CI (cont)
 4) Custom source for indexing (cont)
 5) k8s file for GKE
-6) configure help for easier k8s app run 
+6) configure helm for easier k8s app run 
+7) configure jobs for k8s to run crawl/index on schedule
+8) dotabuff match simulator (cont)
+9) User JWT Auth mod (cont)
+   1) Add nav links for auth/ resources

@@ -27,4 +27,5 @@ urlpatterns = [
     path("bbc/", include("source_bbc.urls")),
     path("dota_buff/", include("source_dota_buff.urls")),
     path("custom_data_source/", include("custom_data_source.urls")),
+    path("auth/", include("user.urls")),
 ]

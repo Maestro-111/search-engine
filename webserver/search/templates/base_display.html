@@ -7,12 +7,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Web Crawler Search App{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base_user.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
+
     <header>
         <h1>{% block header %}Welcome!{% endblock %}</h1>
     </header>
+
+    <div class="user-section">
+        <div class="container">
+            <div id="user-info" class="user-controls" style="display: none;">
+                <span class="greeting">Hello, <strong id="current-username"></strong>!</span>
+                <div class="action-buttons">
+                    <a href="/auth/user/profile/" class="btn btn-primary">View Profile</a>
+                    <button id="logout-btn" class="btn btn-danger">Logout</button>
+                </div>
+            </div>
+
+            <div id="login-section" class="user-controls" style="display: none;">
+                <div class="action-buttons">
+                    <a href="/auth/login/" class="btn btn-success">Login</a>
+                    <a href="/auth/register/" class="btn btn-primary">Register</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <main class="content">
         <div class="container">
@@ -28,6 +50,8 @@
     </footer>
 
     <script src="{% static 'js/base.js' %}"></script>
+    <script src="{% static 'js/user.js' %}"></script>
+    <script src="{% static 'user/js/auth.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
 </body>

@@ -1,0 +1,35 @@
+.profile-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+.profile-field {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+.profile-field label {
+    font-weight: bold;
+    display: inline-block;
+    width: 150px;
+}
+.loading {
+    text-align: center;
+    color: #666;
+}
+.error {
+    color: red;
+    text-align: center;
+}
+.actions {
+    text-align: center;
+    margin-top: 20px;
+}
+button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+}
