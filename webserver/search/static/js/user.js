@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function updateUserInterface() {
 
     const userInfoDiv = document.getElementById('user-info');
-    const loginSectionDiv = document.getElementById('login-section'); // This might not exist
+    const loginSectionDiv = document.getElementById('login-section');
     const usernameSpan = document.getElementById('current-username');
 
     if (AuthManager.isLoggedIn()) {
@@ -22,7 +22,7 @@ function updateUserInterface() {
             if (userInfoDiv) {
                 userInfoDiv.style.display = 'block';
             }
-            if (loginSectionDiv) {  // Add null check
+            if (loginSectionDiv) {
                 loginSectionDiv.style.display = 'none';
             }
         }
@@ -30,7 +30,7 @@ function updateUserInterface() {
         if (userInfoDiv) {
             userInfoDiv.style.display = 'none';
         }
-        if (loginSectionDiv) {  // Add null check
+        if (loginSectionDiv) {
             loginSectionDiv.style.display = 'block';
         }
     }

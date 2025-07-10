@@ -53,9 +53,8 @@ make prod build up
 3) CI (cont)
 4) Custom source for indexing (cont)
 5) k8s file for GKE
-6) configure help for easier k8s app run 
+6) configure helm for easier k8s app run 
 7) configure jobs for k8s to run crawl/index on schedule
 8) dotabuff match simulator (cont)
-9) JWT instead of default session auth
+9) User JWT Auth mod (cont)
    1) Add nav links for auth/ resources
-   2) better UI for auth
