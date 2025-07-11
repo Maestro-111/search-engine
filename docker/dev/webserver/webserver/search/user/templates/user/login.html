@@ -1,0 +1,28 @@
+{% extends 'base_display.html' %}
+{% load static %}
+
+{% block title %}Login Page{% endblock %}
+
+{% block content %}
+<form id="loginForm">
+  <h2>Login</h2>
+
+  <div>
+    <label>Username:</label>
+    <input type="text" id="username" required>
+  </div>
+
+  <div>
+    <label>Password:</label>
+    <input type="password" id="password" required>
+  </div>
+
+  <button type="submit">Login</button>
+  <div id="message"></div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'user/js/login.js' %}"></script>
+<script src="{% static 'user/js/auth.js' %}"></script>
+{% endblock %}

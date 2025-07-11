@@ -1,0 +1,86 @@
+{% extends 'base_display.html' %}
+{% load static %}
+
+{% block title %}Crawl Status{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'source_wikipedia/css/wikipedia.css' %}">
+<link rel="stylesheet" href="{% static 'css/view_job.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="status-container">
+    <h1 class="status-title">Wiki Crawl Job Status</h1>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="status-card">
+        <p>
+            <span class="status-label">Job ID:</span>
+            <span class="status-value">{{ job.id }}</span>
+        </p>
+        <p>
+            <span class="status-label">Status:</span>
+            <span class="status-badge status-{{ job.status }}">{{ job.status|title }}</span>
+        </p>
+        <p>
+            <span class="status-label">Starting URL:</span>
+            <span class="status-value">{{ job.starting_url }}</span>
+        </p>
+        <p>
+            <span class="status-label">Crawl Depth:</span>
+            <span class="status-value">{{ job.crawl_depth }}</span>
+        </p>
+        <p>
+            <span class="status-label">Max Pages:</span>
+            <span class="status-value">{{ job.max_pages }}</span>
+        </p>
+        <p>
+            <span class="status-label">MongoDB Collection:</span>
+            <span class="status-value">{{ job.mongodb_collection }}</span>
+        </p>
+        <p>
+            <span class="status-label">Created:</span>
+            <span class="status-value">{{ job.created_at }}</span>
+        </p>
+        <p>
+            <span class="status-label">Last Updated:</span>
+            <span class="status-value">{{ job.updated_at }}</span>
+        </p>
+        {% if job.error_message %}
+        <p>
+            <span class="status-label">Error:</span>
+            <span class="status-value error-message">{{ job.error_message }}</span>
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="action-buttons">
+        {% if job.status == 'queued' or job.status == 'running' %}
+        <p class="meta-refresh">This page will refresh automatically every 10 seconds</p>
+        <a href="{% url 'wiki_crawler_job_status' job.id %}" class="btn">Refresh Now</a>
+        {% endif %}
+
+        {% if job.status == 'completed' %}
+        <a href="{% url 'wiki_search' %}" class="btn">Go to Wikipedia Search</a>
+        {% endif %}
+
+        <a href="{% url 'wiki_all_crawler_jobs' %}" class="btn btn-secondary">View All Jobs</a>
+        <a href="{% url 'wiki_crawl' %}" class="btn btn-secondary">New Crawl</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if job.status == 'queued' or job.status == 'running' %}
+<script src="{% static 'js/window_reload.js' %}"></script>
+{% endif %}
+{% endblock %}

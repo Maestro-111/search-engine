@@ -1,0 +1,53 @@
+{% extends 'base_search.html' %}
+{% load static %}
+
+{% block title %}Wikipedia Search{% endblock %}
+
+{% block search_css %}
+<link rel="stylesheet" href="{% static 'source_wikipedia/css/wikipedia.css' %}">
+{% endblock %}
+
+{% block search_action %}{% url 'wiki_search' %}{% endblock %}
+{% block search_placeholder %}Search Wikipedia...{% endblock %}
+
+{% block results %}
+<div class="loading-spinner">
+    <img src="{% static 'icons/spinner.gif' %}" alt="Loading...">
+    <p>Searching Wikipedia...</p>
+</div>
+
+<div class="wikipedia-results">
+    {% if results %}
+        {% for result in results %}
+        <div class="wikipedia-article">
+            <h3><a href="{{ result.url }}" target="_blank">{{ result.title }}</a></h3>
+            <div class="article-excerpt">{{ result.excerpt|safe }}</div>
+            <div class="article-meta">
+                <div class="categories">
+                    {% for category in result.categories %}
+                        <span class="category">{{ category }}</span>
+                    {% empty %}
+                        <span class="category">Uncategorized</span>
+                    {% endfor %}
+                </div>
+                <span class="last-updated">Updated: {{ result.last_updated }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="pagination-controls">
+</div>
+{% endblock %}
+
+{% block crawl_specific %}
+<ul class="search-nav-links app-specific-nav">
+    <li><a href="{% url 'wiki_crawl' %}" {% if 'wiki_crawl' in request.path %}class="active"{% endif %}>Crawl Wiki</a></li>
+    <li><a href="{% url 'wiki_all_crawler_jobs' %}" {% if 'wiki_all_crawler_jobs' in request.path %}class="active"{% endif %}>Your Wiki Crawler Jobs</a></li>
+</ul>
+{% endblock %}
+
+{% block extra_search_js %}
+<script src="{% static 'source_wikipedia/js/wikipedia.js' %}"></script>
+{% endblock %}

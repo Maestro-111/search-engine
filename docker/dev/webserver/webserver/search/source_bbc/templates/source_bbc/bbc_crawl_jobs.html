@@ -1,0 +1,111 @@
+{% extends 'base_display.html' %}
+{% load static %}
+
+{% block title %}All BBC Crawl Jobs{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'source_bbc/css/bbc.css' %}">
+<link rel="stylesheet" href="{% static 'css/view_all_jobs.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="jobs-container">
+    <h1 class="jobs-title">All BBC Crawler Jobs</h1>
+
+    {% if messages %}
+    <div class="message-container">
+        {% for message in messages %}
+        <div class="message {% if message.tags %}message-{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if jobs %}
+    <table class="jobs-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Spider Name</th>
+                <th>Status</th>
+                <th>URL</th>
+                <th>Depth</th>
+                <th>Max Pages</th>
+                <th>Collection</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{ job.id }}</td>
+                <td>{{ job.spider_name }}</td>
+                <td><span class="status-badge status-{{ job.status }}">{{ job.status|title }}</span></td>
+                <td>{{ job.starting_url|truncatechars:30 }}</td>
+                <td>{{ job.crawl_depth }}</td>
+                <td>{{ job.max_pages }}</td>
+                <td>{{ job.mongodb_collection }}</td>
+                <td>{{ job.created_at|date:"M d, Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'bbc_crawler_job_status' job.id %}" class="btn">Details</a>
+
+                    <!-- Delete Button -->
+                    <form method="post" action="{% url 'bbc_remove_job' job.id %}" style="display:inline;"
+                          onsubmit="return confirm('Are you sure you want to delete job #{{ job.id }}? This action cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    {% if jobs.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if jobs.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ jobs.previous_page_number }}">previous</a>
+            {% else %}
+                <span class="disabled">&laquo; first</span>
+                <span class="disabled">previous</span>
+            {% endif %}
+
+            <span class="current">
+                Page {{ jobs.number }} of {{ jobs.paginator.num_pages }}
+            </span>
+
+            {% if jobs.has_next %}
+                <a href="?page={{ jobs.next_page_number }}">next</a>
+                <a href="?page={{ jobs.paginator.num_pages }}">last &raquo;</a>
+            {% else %}
+                <span class="disabled">next</span>
+                <span class="disabled">last &raquo;</span>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="no-jobs">
+        <p>No crawler jobs found.</p>
+    </div>
+    {% endif %}
+
+    <p class="meta-refresh">This page will refresh automatically every 10 seconds</p>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{% url 'bbc_crawl' %}" class="btn" style="margin-right: 10px;">Start New Crawl</a>
+        <a href="{% url 'bbc_search' %}" class="btn">Back to Search</a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/window_reload.js' %}"></script>
+{% endblock %}

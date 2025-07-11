@@ -1,0 +1,61 @@
+{% extends 'base_display.html' %}
+{% load static %}
+
+{% block title %}Profile Page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'user/css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+  <h2>User Profile</h2>
+
+  <div id="loading" class="loading">Loading profile...</div>
+  <div id="error" class="error" style="display: none;"></div>
+
+  <div id="profile-content" style="display: none;">
+    <div class="profile-field">
+      <label>ID:</label>
+      <span id="user-id"></span>
+    </div>
+
+    <div class="profile-field">
+      <label>Username:</label>
+      <span id="user-username"></span>
+    </div>
+
+    <div class="profile-field">
+      <label>Email:</label>
+      <span id="user-email"></span>
+    </div>
+
+    <div class="profile-field">
+      <label>First Name:</label>
+      <span id="user-first-name"></span>
+    </div>
+
+    <div class="profile-field">
+      <label>Last Name:</label>
+      <span id="user-last-name"></span>
+    </div>
+
+    <div class="profile-field">
+      <label>Date Joined:</label>
+      <span id="user-date-joined"></span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button onclick="refreshProfile()">Refresh Profile</button>
+    <button onclick="goToLogin()">Back to Login</button>
+    <button onclick="logout()">Logout</button>
+    <button onclick="goToMenu()">Menu</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'user/js/profile.js' %}"></script>
+<script src="{% static 'user/js/auth.js' %}"></script>
+{% endblock %}
