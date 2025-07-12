@@ -47,8 +47,8 @@ make prod build up
 ## TO DO:
 
 1) how to rank elastic response?
-    1) first elastic ranks by additional fields
-    2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
+   1) commands to generate training data (cont) - more explicit entity construction
+   2) train ranking model
 2) unit testing for django (webserver)
 3) CI (cont)
 4) Custom source for indexing (cont)

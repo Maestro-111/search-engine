@@ -42,11 +42,30 @@ class UserPreference(models.Model):
         unique_together = ["user", "preference_type", "preference_value"]
 
 
-# class QueryTemplate(models.Model):
-#     template = models.CharField(max_length=500)
-#     persona = models.CharField(max_length=50, choices=SyntheticUser.PERSONAS)
-#     complexity = models.CharField(max_length=20, choices=SyntheticUser.EXPERTISE_LEVELS)
-#     placeholders = models.JSONField(default=dict)  # Store placeholder options
-#
-#     def __str__(self):
-#         return f"{self.template} ({self.persona})"
+class TrainingData(models.Model):
+    user = models.ForeignKey(
+        SyntheticUser, on_delete=models.CASCADE, related_name="training_data"
+    )
+    query = models.TextField()
+    entity = models.JSONField()  # Stores the entity dict
+    doc_url = models.URLField(max_length=500, blank=True)
+    doc_title = models.CharField(max_length=500)
+    relevance_score = models.FloatField()
+    rank = models.IntegerField()
+
+    # Denormalized fields for easier querying
+    user_persona = models.CharField(max_length=50)
+    user_expertise = models.CharField(max_length=20)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "query"]),
+            models.Index(fields=["relevance_score"]),
+            models.Index(fields=["rank"]),
+        ]
+        ordering = ["user", "query", "rank"]
+
+    def __str__(self):
+        return f"{self.user.name} - {self.query[:50]} - Rank: {self.rank}"

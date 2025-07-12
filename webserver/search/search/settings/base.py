@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "source_dota_buff.apps.SourceDotabuffConfig",
     "custom_data_source.apps.CustomDataSourceConfig",
     "user.apps.UserConfig",
+    "common_utils",
 ]
 
 MIDDLEWARE = [
