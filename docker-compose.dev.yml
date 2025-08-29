@@ -168,6 +168,16 @@ services:
     networks:
       - search-network
 
+  ranker:
+    image: search-engine-ranker:latest
+    volumes:
+      - ./ranker:/app/ranker/
+    container_name: ranker
+    depends_on:
+      - db
+    networks:
+      - search-network
+
   redis:
     image: redis:7.2
     container_name: redis
@@ -187,7 +197,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "6001:5432" # container:host
+      - "6001:5432" # host:container
     networks:
       - search-network
 

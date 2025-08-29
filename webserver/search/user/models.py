@@ -17,6 +17,11 @@ class SyntheticUser(models.Model):
         ("student", "Student"),
         ("hr", "HR"),
         ("historian", "Historian"),
+        ("marketing", "Marketing"),
+        ("finance", "Finance"),
+        ("designer", "Designer"),
+        ("healthcare", "Healthcare"),
+        ("educator", "Educator"),
     ]
 
     name = models.CharField(max_length=100)

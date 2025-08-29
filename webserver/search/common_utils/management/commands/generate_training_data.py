@@ -41,9 +41,7 @@ class SyntheticRelevanceCalculator:
                 entity, document
             ),
             "position_bias": self._calculate_position_bias(rank),
-            "expertise_match": self._calculate_expertise_match(user, document),
             "category_overlap": self._calculate_category_overlap(user, document),
-            "freshness": self._calculate_freshness_score(user, document),
         }
 
         # Weight the components based on user persona
@@ -151,69 +149,6 @@ class SyntheticRelevanceCalculator:
         # Position 0: 1.0, Position 1: ~0.63, Position 5: ~0.31, Position 10: ~0.21
         return 1.0 / (1.0 + math.log(rank + 1))
 
-    def _calculate_expertise_match(self, user, document):
-        """Check if document complexity matches user expertise"""
-        # This is simplified - in reality, you'd analyze document complexity
-        doc_title = document.get("title", "").lower()
-        doc_content = document.get("excerpt", "").lower()
-
-        # Simple heuristics for document complexity
-        beginner_indicators = [
-            "introduction",
-            "basic",
-            "tutorial",
-            "getting started",
-            "beginner",
-            "simple",
-        ]
-        intermediate_indicators = [
-            "guide",
-            "practical",
-            "implementation",
-            "example",
-            "how to",
-        ]
-        expert_indicators = [
-            "advanced",
-            "architecture",
-            "optimization",
-            "performance",
-            "scale",
-            "pattern",
-        ]
-
-        doc_text = doc_title + " " + doc_content
-
-        # Count indicators
-        beginner_count = sum(1 for ind in beginner_indicators if ind in doc_text)
-        intermediate_count = sum(
-            1 for ind in intermediate_indicators if ind in doc_text
-        )
-        expert_count = sum(1 for ind in expert_indicators if ind in doc_text)
-
-        # Determine document level
-        if expert_count > beginner_count and expert_count > intermediate_count:
-            doc_level = "expert"
-        elif beginner_count > intermediate_count:
-            doc_level = "beginner"
-        else:
-            doc_level = "intermediate"
-
-        # Score based on match
-        if user.expertise_level == doc_level:
-            return 0.8
-        elif user.expertise_level == "intermediate" and doc_level in [
-            "beginner",
-            "expert",
-        ]:
-            return 0.5  # Intermediate users can handle both
-        elif user.expertise_level == "expert" and doc_level == "intermediate":
-            return 0.6  # Experts can read intermediate content
-        elif user.expertise_level == "beginner" and doc_level != "expert":
-            return 0.4  # Beginners struggle with expert content
-        else:
-            return 0.2
-
     def _calculate_category_overlap(self, user, document):
         """Calculate overlap between user's preferred categories and document categories"""
         if not document.get("categories"):
@@ -245,24 +180,6 @@ class SyntheticRelevanceCalculator:
         total_matches = exact_matches + (partial_matches * 0.5)
         return min(1.0, total_matches / len(user_categories))
 
-    def _calculate_freshness_score(self, user, document):
-        """Some personas prefer fresher content"""
-        # Since we don't have dates in the document, this is simplified
-        # In real implementation, you'd check document date
-
-        freshness_preference = {
-            "developer": 0.7,  # Developers often need current info
-            "data_scientist": 0.6,  # ML field changes rapidly
-            "business_analyst": 0.5,
-            "researcher": 0.3,  # Researchers value established work
-            "student": 0.4,
-            "historian": 0.1,  # Historians don't care about freshness
-            "hr": 0.5,
-        }
-
-        # Return persona-based freshness preference as a baseline
-        return freshness_preference.get(user.persona, 0.5)
-
     def _get_weights_for_persona(self, persona):
         """Get component weights based on user persona"""
         weights = {
@@ -270,57 +187,73 @@ class SyntheticRelevanceCalculator:
                 "preference_match": 0.25,
                 "query_document_match": 0.3,
                 "position_bias": 0.15,
-                "expertise_match": 0.15,
                 "category_overlap": 0.1,
-                "freshness": 0.05,
             },
             "data_scientist": {
                 "preference_match": 0.2,
                 "query_document_match": 0.35,
                 "position_bias": 0.15,
-                "expertise_match": 0.2,
                 "category_overlap": 0.05,
-                "freshness": 0.05,
             },
             "business_analyst": {
                 "preference_match": 0.3,
                 "query_document_match": 0.25,
                 "position_bias": 0.2,
-                "expertise_match": 0.1,
                 "category_overlap": 0.1,
-                "freshness": 0.05,
             },
             "researcher": {
                 "preference_match": 0.25,
                 "query_document_match": 0.3,
                 "position_bias": 0.1,
-                "expertise_match": 0.2,
                 "category_overlap": 0.15,
-                "freshness": 0.0,
             },
             "student": {
                 "preference_match": 0.2,
                 "query_document_match": 0.25,
                 "position_bias": 0.25,
-                "expertise_match": 0.25,
                 "category_overlap": 0.05,
-                "freshness": 0.0,
             },
             "historian": {
                 "preference_match": 0.3,
                 "query_document_match": 0.35,
                 "position_bias": 0.1,
-                "expertise_match": 0.15,
                 "category_overlap": 0.1,
-                "freshness": 0.0,
             },
             "hr": {
-                "preference_match": 0.35,
-                "query_document_match": 0.3,
-                "position_bias": 0.15,
-                "expertise_match": 0.1,
+                "preference_match": 0.3,
+                "query_document_match": 0.25,
+                "position_bias": 0.12,
                 "category_overlap": 0.1,
-                "freshness": 0.0,
+            },
+            "marketing": {
+                "preference_match": 0.2,
+                "query_document_match": 0.2,
+                "position_bias": 0.1,
+                "category_overlap": 0.1,
+            },
+            "finance": {
+                "preference_match": 0.3,
+                "query_document_match": 0.35,
+                "position_bias": 0.1,
+                "category_overlap": 0.1,
+            },
+            "designer": {
+                "preference_match": 0.2,
+                "query_document_match": 0.2,
+                "position_bias": 0.15,
+                "category_overlap": 0.1,
+            },
+            "healthcare": {
+                "preference_match": 0.4,
+                "query_document_match": 0.4,
+                "position_bias": 0.05,
+                "category_overlap": 0.1,
+            },
+            "educator": {
+                "preference_match": 0.4,
+                "query_document_match": 0.4,
+                "position_bias": 0.2,
+                "category_overlap": 0.1,
             },
         }
 

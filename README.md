@@ -20,9 +20,11 @@ You can index existing data sources (whatever is available on the menu tab) or u
 
 We use LLM (gpt-4) to break down the request to search engine from user into entities and pass them to elastic client for more accurate mapping.
 
+**Ranking** rank elastic search response (tbd)
+
 ## Auth
 
-**JWT**: Currently, we are testing/developing JWT based auth instead of django default sessions auth. User will be able to log in and see their personal profile. Tokens will be stored in the browser as this is not a real production app.
+**JWT**: JWT based auth instead of django default sessions auth. User will be able to log in and see their personal profile. Tokens will be stored in the browser as this is not a real production app.
 
 ## Set up with Docker
 
@@ -48,7 +50,8 @@ make prod build up
 
 1) how to rank elastic response?
    1) commands to generate training data (cont) - more explicit entity construction
-   2) train ranking model
+   2) create a ranking module (data - features - train - server)
+   3) how XGB learns to rank?
 2) unit testing for django (webserver)
 3) CI (cont)
 4) Custom source for indexing (cont)
@@ -58,3 +61,4 @@ make prod build up
 8) dotabuff match simulator (cont)
 9) User JWT Auth mod (cont)
    1) Add nav links for auth/ resources
+

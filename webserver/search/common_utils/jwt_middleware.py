@@ -10,19 +10,20 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
     def process_request(self, request):
 
         skip_paths = [
-            "/auth/login/",
-            "/auth/refresh/",
-            "/auth/register/",
-            "/auth/user/profile/",
-        ]  # mind the path end?
+            "/auth/login",
+            "/auth/refresh",
+            "/auth/register",
+            "/auth/user/profile",
+        ]
 
-        if any(request.path.startswith(path) for path in skip_paths):
+        request_path = request.path.rstrip("/")
+
+        if any(request_path == path for path in skip_paths):
             return None
 
         if not request.path.startswith("/auth/"):
             return None
 
-        # Get token from Authorization header
         auth_header = request.META.get("HTTP_AUTHORIZATION")
 
         if not auth_header:
@@ -35,7 +36,6 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
                 {"error": "Invalid authorization header format"}, status=401
             )
 
-        # Decode and validate token
         payload = JWTUtils.decode_token(token)
 
         if "error" in payload:
