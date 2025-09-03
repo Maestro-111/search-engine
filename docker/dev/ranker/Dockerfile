@@ -27,15 +27,21 @@ RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock* /app/
 WORKDIR /app
 
+RUN mkdir -p ranker/artifacts
+
 # Install Python dependencies
 RUN poetry install --no-root --only main,ranker
 
 # Copy the app code
 COPY ranker /app/ranker
+COPY entrypoint.sh /app/entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
 
 # Default environment variables
 ENV MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_DATABASE=wikipedia_db \
     MONGODB_COLLECTION=articles
 
-CMD ["python", "/app/ranker/pipeline.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["ranker_worker"]

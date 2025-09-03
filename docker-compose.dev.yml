@@ -171,12 +171,32 @@ services:
   ranker:
     image: search-engine-ranker:latest
     volumes:
+      - ranker_artifacts:/app/ranker/artifacts
       - ./ranker:/app/ranker/
     container_name: ranker
     depends_on:
       - db
     networks:
       - search-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: ranker
+
+  ranker-worker:
+    image: search-engine-ranker:latest
+    volumes:
+      - ranker_artifacts:/app/ranker/artifacts
+      - ./ranker:/app/ranker/
+    container_name: ranker-worker
+    depends_on:
+      - db
+    networks:
+      - search-network
+    command: ranker_worker
 
   redis:
     image: redis:7.2
@@ -222,3 +242,4 @@ volumes:
   static_volume:
   postgres_data:
   redis_data:
+  ranker_artifacts:

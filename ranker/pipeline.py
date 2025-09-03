@@ -2,11 +2,11 @@ from data_prep import DataPrep
 import xgboost as xgb
 import pandas as pd
 from sklearn.metrics import ndcg_score
+from ranker_logging import logger
+from xgb_ranker import train_xgb_ranker
 
 
-def evaluate_per_query(
-    model, df, feature_cols, target_col, group_key=("query", "user_id"), k=5
-):
+def evaluate_per_query(model, df, feature_cols, target_col, k, group_key):
     """
     Compute NDCG@k per query-user group.
     """
@@ -39,57 +39,29 @@ def main():
             dbname="search_db",
             user="search_admin",
             password="1234",
+            logger=logger,
         )
 
         train_df, test_df, feature_cols, target_col = prep.process_data()
 
-        X_train = train_df[feature_cols].values
-        y_train = train_df[target_col].values
-        X_test = test_df[feature_cols].values
-        y_test = test_df[target_col].values
-
-        # Grouping: number of docs per (query, user_id)
-        train_group = train_df.groupby(["query", "user_id"]).size().to_numpy()
-        test_group = test_df.groupby(["query", "user_id"]).size().to_numpy()
-
-        dtrain = xgb.DMatrix(X_train, label=y_train)
-        dtrain.set_group(train_group)
-
-        dtest = xgb.DMatrix(X_test, label=y_test)
-        dtest.set_group(test_group)
-
-        params = {
-            "objective": "rank:ndcg",  # optimize ranking
-            "eval_metric": "ndcg",
-            "eta": 0.1,
-            "max_depth": 6,
-            "min_child_weight": 100,
-            "subsample": 0.8,
-            "colsample_bytree": 0.8,
-        }
-
-        model = xgb.train(
-            params,
-            dtrain,
-            num_boost_round=200,
-            evals=[(dtrain, "train"), (dtest, "test")],
-            early_stopping_rounds=20,
+        model = train_xgb_ranker(
+            train_df, test_df, feature_cols, target_col, logger=logger
         )
 
-        test_df["pred"] = model.predict(dtest)
-        test_df["rank"] = test_df.groupby(["query", "user_id"])["pred"].rank(
-            "dense", ascending=False
+        train_eval = evaluate_per_query(
+            model, train_df, feature_cols, target_col, 5, ["query", "user_id"]
+        )
+        test_eval = evaluate_per_query(
+            model, test_df, feature_cols, target_col, 5, ["query", "user_id"]
         )
 
-        train_eval = evaluate_per_query(model, train_df, feature_cols, target_col, k=5)
-        test_eval = evaluate_per_query(model, test_df, feature_cols, target_col, k=5)
-
-        print("Train NDCG@5 (mean):", train_eval["ndcg"].mean())
-        print("Test NDCG@5 (mean):", test_eval["ndcg"].mean())
+        logger.info(f"Train NDCG@5 (mean): {train_eval["ndcg"].mean()}")
+        logger.info(f"Test NDCG@5 (mean): {test_eval["ndcg"].mean()}")
 
         test_eval.to_csv("test_ndcg_per_query.csv", index=False)
 
     except Exception as e:
+        logger.error(f"Pipeline Error: {e}")
         raise e
 
 

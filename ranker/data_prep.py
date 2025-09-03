@@ -5,10 +5,13 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
+import pickle
+import os
+import json
 
 
 class DataPrep:
-    def __init__(self, table_name, host, port, dbname, user, password):
+    def __init__(self, table_name, host, port, dbname, user, password, logger):
 
         self.table_name = table_name
         self.host = host
@@ -16,6 +19,8 @@ class DataPrep:
         self.dbname = dbname
         self.user = user
         self.password = password
+
+        self.logger = logger
 
         self.columns = [
             "query",
@@ -46,6 +51,10 @@ class DataPrep:
             ]
         )
 
+        self.logger.info(
+            f"Query: {self.query}, Columns: {self.columns}, Aliases: {self.alias}"
+        )
+
     def fetch_psql_data(self):
 
         try:
@@ -68,15 +77,50 @@ class DataPrep:
 
             cursor.close()
             conn.close()
+
+            self.logger.info(f"Fetched {len(rows)} rows from {self.table_name}")
             return rows
 
         except Exception as e:
-            print("Error:", e)
+            self.logger.error(f"Error: {e}")
             return []
+
+    def save_metadata(self, train_df, feature_cols, artifacts_dir="artifacts"):
+        """Save metadata including category mappings"""
+
+        metadata = {
+            "feature_columns": feature_cols,
+            "persona_categories": train_df["user_persona"]
+            .astype("category")
+            .cat.categories.tolist(),
+            "expertise_categories": train_df["user_expertise"]
+            .astype("category")
+            .cat.categories.tolist(),
+            "timestamp": pd.Timestamp.now().isoformat(),
+        }
+
+        metadata_path = os.path.join(artifacts_dir, "metadata.json")
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        self.logger.info(f"Metadata saved to {metadata_path}")
 
     def psql_to_df(self, rows):
         df = pd.DataFrame(rows, columns=self.alias)
         return df
+
+    @staticmethod
+    def save_tfidf_vectorizer(vectorizer, filepath):
+        with open(filepath, "wb") as f:
+            pickle.dump(vectorizer, f)
+
+    @staticmethod
+    def jaccard_similarity(q, d):
+        q_words = set(re.findall(r"\w+", q.lower()))
+        d_words = set(re.findall(r"\w+", d.lower()))
+        if not q_words and not d_words:
+            return 0.0
+        return len(q_words & d_words) / len(q_words | d_words)
 
     @staticmethod
     def split_query_user(df, test_size=0.2, random_state=42):
@@ -152,6 +196,15 @@ class DataPrep:
 
             feature_cols.append("word_overlap")
 
+            train_df["jaccard_similarity"] = train_df.apply(
+                lambda row: self.jaccard_similarity(row["query"], row["doc"]), axis=1
+            )
+            test_df["jaccard_similarity"] = test_df.apply(
+                lambda row: self.jaccard_similarity(row["query"], row["doc"]), axis=1
+            )
+
+            feature_cols.append("jaccard_similarity")
+
             # ---- USER FEATURES ----
             train_df["persona_enc"] = (
                 train_df["user_persona"].astype("category").cat.codes
@@ -176,8 +229,21 @@ class DataPrep:
 
             target_col = "rel_label"
 
-        except Exception as e:
-            print("Error:", e)
-            raise e
+            if os.path.exists("artifacts"):
+                self.logger.info("Folder artifacts exists, trying to save tf idf")
+                self.save_tfidf_vectorizer(vectorizer, "artifacts/tfidf_vectorizer.pkl")
+            else:
+                self.logger.warning(
+                    "Folder artifacts does not exist, could not save tf idf"
+                )
 
-        return train_df, test_df, feature_cols, target_col
+            self.logger.info(f"Feature cols: {feature_cols}")
+            self.logger.info(f"Target col: {target_col}")
+
+            self.save_metadata(train_df, feature_cols, artifacts_dir="artifacts")
+
+            return train_df, test_df, feature_cols, target_col
+
+        except Exception as e:
+            self.logger.error(f"Error: {e}")
+            raise e
