@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 import json
 from common_utils.jwt_utils import JWTUtils
 from django.shortcuts import render
+from .models import Profile
 
 
 @csrf_exempt
@@ -58,19 +59,53 @@ def register(request):
             username = data.get("username")
             email = data.get("email")
             password = data.get("password")
-            if not all([username, email, password]):
+            persona = data.get("persona")
+            expertise_level = data.get("expertise_level")
+
+            if not all([username, email, password, persona, expertise_level]):
                 return JsonResponse(
-                    {"error": "Username, email, and password required"}, status=400
+                    {
+                        "error": "All fields are required (username, email, password, persona, expertise level)"
+                    },
+                    status=400,
                 )
-            # Check if user already exists
+
+            VALID_PERSONAS = [
+                "developer",
+                "data_scientist",
+                "business_analyst",
+                "researcher",
+                "student",
+                "hr",
+                "historian",
+                "marketing",
+                "finance",
+                "designer",
+                "healthcare",
+                "educator",
+            ]
+            VALID_EXPERTISE = ["beginner", "intermediate", "expert"]
+
+            if persona not in VALID_PERSONAS:
+                return JsonResponse({"error": "Invalid persona selected"}, status=400)
+            if expertise_level not in VALID_EXPERTISE:
+                return JsonResponse(
+                    {"error": "Invalid expertise level selected"}, status=400
+                )
+
             if User.objects.filter(username=username).exists():
                 return JsonResponse({"error": "Username already exists"}, status=400)
             if User.objects.filter(email=email).exists():
                 return JsonResponse({"error": "Email already exists"}, status=400)
-            # Create user
+
             user = User.objects.create_user(
                 username=username, email=email, password=password
             )
+
+            Profile.objects.create(
+                user=user, persona=persona, expertise_level=expertise_level
+            )
+
             # Generate tokens
             tokens = JWTUtils.generate_tokens(user)
             return JsonResponse(

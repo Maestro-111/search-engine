@@ -49,3 +49,28 @@ class IndexJob(models.Model):
 
     def __str__(self):
         return f"Index Job {self.id} - {self.status}"
+
+
+# models.py
+class RankingJob(models.Model):
+
+    STATUS_CHOICES = (
+        ("queued", "Queued"),
+        ("running", "Running"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    )
+
+    user_persona = models.CharField(max_length=100)
+    user_expertise = models.CharField(max_length=100)
+    query = models.TextField()
+    documents = models.JSONField()
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="queued")
+    external_job_id = models.CharField(max_length=100, null=True, blank=True)
+
+    ranked_documents = models.JSONField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(null=True, blank=True)

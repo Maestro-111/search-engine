@@ -5,10 +5,14 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const username = document.getElementById('username').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const persona = document.getElementById('persona').value;
+    const expertiseLevel = document.getElementById('expertiseLevel').value;
     const messageElement = document.getElementById('message');
 
     messageElement.innerHTML = '';
-    const validationErrors = validateLoginForm(username, password);
+
+    // Validate form including new fields
+    const validationErrors = validateRegistrationForm(username, email, password, persona, expertiseLevel);
 
     if (validationErrors.length > 0) {
         // Show validation errors
@@ -23,7 +27,13 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         const response = await fetch('/auth/register/', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, email, password})
+            body: JSON.stringify({
+                username,
+                email,
+                password,
+                persona,
+                expertise_level: expertiseLevel
+            })
         });
 
         const data = await response.json();
@@ -49,9 +59,10 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 });
 
 
-function validateLoginForm(username, password) {
+function validateRegistrationForm(username, email, password, persona, expertiseLevel) {
     const errors = [];
 
+    // Username validation
     if (!username || username.trim() === '') {
         errors.push('Username is required');
     } else if (username.length < 3) {
@@ -62,18 +73,30 @@ function validateLoginForm(username, password) {
         errors.push('Username can only contain letters, numbers, @, ., _, and -');
     }
 
-    if (username.includes('@')) {
-        if (!isValidEmail(username)) {
-            errors.push('Please enter a valid email address');
-        }
+    // Email validation
+    if (!email || email.trim() === '') {
+        errors.push('Email is required');
+    } else if (!isValidEmail(email)) {
+        errors.push('Please enter a valid email address');
     }
 
+    // Password validation
     if (!password || password.trim() === '') {
         errors.push('Password is required');
     } else if (password.length < 6) {
         errors.push('Password must be at least 6 characters long');
     } else if (password.length > 128) {
         errors.push('Password must be less than 128 characters');
+    }
+
+    // Persona validation
+    if (!persona || persona.trim() === '') {
+        errors.push('Please select a persona');
+    }
+
+    // Expertise level validation
+    if (!expertiseLevel || expertiseLevel.trim() === '') {
+        errors.push('Please select an expertise level');
     }
 
     return errors;

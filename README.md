@@ -51,9 +51,7 @@ make prod build up
 1) how to rank elastic response?
    1) commands to generate training data (cont) - more explicit entity construction
    2) create a ranking module (data - features - train - server)
-      1) More features
-      2) add logging
-      3) api for serving
+      1) how to pass/receive documents (webserver <-> ranker)
 2) unit testing for django (webserver)
 3) CI (cont)
 4) Custom source for indexing (cont)
@@ -63,5 +61,6 @@ make prod build up
 8) dotabuff match simulator (cont)
 9) User JWT Auth mod (cont)
    1) Add nav links for auth/ resources
+   2) when making a request to any user specific view, pass the info in HTTP header
 10) add devcontainer setup for all modules
 

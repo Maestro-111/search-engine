@@ -1,4 +1,28 @@
 import xgboost as xgb
+import pandas as pd
+from sklearn.metrics import ndcg_score
+
+
+def evaluate_per_query(model, df, feature_cols, target_col, k, group_key):
+    """
+    Compute NDCG@k per query-user group.
+    """
+    results = []
+
+    for (q, u), group in df.groupby(group_key):
+
+        if len(group) < 2:
+            continue
+
+        X = group[feature_cols].values
+        y_true = group[target_col].values
+        y_pred = model.predict(xgb.DMatrix(X))
+
+        # ndcg_score expects shape (1, n_docs) or (n_queries, n_docs)
+        ndcg = ndcg_score([y_true], [y_pred], k=k)
+        results.append({"query": q, "user_id": u, "ndcg": ndcg})
+
+    return pd.DataFrame(results)
 
 
 def train_xgb_ranker(train_df, test_df, feature_cols, target_col, logger):

@@ -4,17 +4,17 @@ from ranker_logging import logger
 import subprocess
 import psutil
 import json
+from rank_predict import main
 
 
 @celery_app.task(bind=True, name="ranker.tasks.run_ranker_predict_task")
 def run_ranker_predict_task(self, ranker_predict_request_data):
-    heartbeat_task_id = None
 
     # Extract parameters
     user_persona = ranker_predict_request_data["user_persona"]
     user_expertise = ranker_predict_request_data["user_expertise"]
     query = ranker_predict_request_data["query"]
-    document = ranker_predict_request_data["document"]
+    documents_json = ranker_predict_request_data["documents"]
 
     try:
         self.update_state(state="PROGRESS", meta={"status": "starting", "progress": 0})
@@ -22,90 +22,45 @@ def run_ranker_predict_task(self, ranker_predict_request_data):
         logger.info(
             f"Starting ranker predict {self.request.id} with params: {ranker_predict_request_data}"
         )
-        logger.info(
-            f"Attempting to schedule heartbeat task for main task {self.request.id}"
-        )
 
-        # Schedule heartbeat
-        heartbeat_task_id = heartbeat_task.apply_async(
-            args=[self.request.id], countdown=10
-        )
+        logger.info(f"Documents lst:{documents_json}")
 
-        logger.info(f"Heartbeat task scheduled with ID: {heartbeat_task_id.id}")
-
-        cmd = [
-            "python",
-            "/app/ranker/rank_predict.py",
-            "--user_persona",
+        prediction_result = main(
             user_persona,
-            "--user_expertise",
             user_expertise,
-            "--query",
             query,
-            "--document",
-            document,
-            "--output_format",
-            "json",  # Important: get structured output
-        ]
-
-        self.update_state(state="PROGRESS", meta={"status": "running", "progress": 25})
-
-        logger.info(f"Starting subprocess for task {self.request.id}")
-        logger.info(f"Command: {cmd}")
-
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=7200,
-            cwd="/app/ranker",  # Set working directory
+            documents_json,
         )
 
+        result_completed = int(prediction_result["status"] == "success")
+
         logger.info(
-            f"Subprocess completed for task {self.request.id}, exit code: {result.returncode}"
+            f"Predict completed for task {self.request.id}, result_completed: {result_completed}"
         )
 
         self.update_state(
             state="PROGRESS", meta={"status": "finishing", "progress": 75}
         )
 
-        # Stop heartbeat task
-        if heartbeat_task_id:
-            logger.info(f"Revoking heartbeat task {heartbeat_task_id.id}")
-            celery_app.control.revoke(heartbeat_task_id.id, terminate=True)
-            logger.info(f"Heartbeat task {heartbeat_task_id.id} revoked")
+        if result_completed:
 
-        if result.returncode == 0:
-            # Parse JSON output
-            try:
-                prediction_result = json.loads(result.stdout)
-                return {
-                    "status": "completed",
-                    "exit_code": result.returncode,
-                    "score": prediction_result.get("score"),
-                    "features": prediction_result.get("features"),
-                    "finished_at": datetime.datetime.now(datetime.UTC).isoformat(),
-                }
-            except json.JSONDecodeError:
-                # Fallback if JSON parsing fails
-                return {
-                    "status": "completed",
-                    "exit_code": result.returncode,
-                    "stdout": result.stdout[-1000:],
-                    "finished_at": datetime.datetime.now(datetime.UTC).isoformat(),
-                }
+            logger.info(f"Prediction result: {prediction_result}")
+
+            return {
+                "status": "completed",
+                "query": query,
+                "user_persona": user_persona,
+                "user_expertise": user_expertise,
+                "num_documents": prediction_result.get("num_documents", 0),
+                "ranked_documents": prediction_result.get("ranked_documents", []),
+                "finished_at": datetime.datetime.now(datetime.UTC).isoformat(),
+            }
+
         else:
-            raise Exception(
-                f"Ranker predict failed with exit code {result.returncode}: {result.stderr}"
-            )
-
+            raise Exception(f"Ranker predict failed")
     except subprocess.TimeoutExpired:
-        if heartbeat_task_id:
-            celery_app.control.revoke(heartbeat_task_id.id, terminate=True)
         raise Exception("Ranker predict process timed out after 2 hours")
     except Exception as e:
-        if heartbeat_task_id:
-            celery_app.control.revoke(heartbeat_task_id.id, terminate=True)
         logger.exception(f"Error in Ranker predict task: {str(e)}")
         raise
 

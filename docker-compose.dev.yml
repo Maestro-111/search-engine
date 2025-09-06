@@ -176,6 +176,8 @@ services:
     container_name: ranker
     depends_on:
       - db
+      - webserver
+      - redis
     networks:
       - search-network
     healthcheck:
@@ -194,6 +196,8 @@ services:
     container_name: ranker-worker
     depends_on:
       - db
+      - webserver
+      - redis
     networks:
       - search-network
     command: ranker_worker

@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import uuid
 from celery_app import celery_app
 from tasks import run_ranker_fit_task, run_ranker_predict_task
 import uvicorn
+import redis
+from redis.exceptions import RedisError
+from ranker_logging import logger
 
 app = FastAPI()
 
@@ -17,7 +20,7 @@ class RankerPredictRequest(BaseModel):
     user_persona: str
     user_expertise: str
     query: str
-    document: str
+    documents: str
 
 
 class JobStatusResponse(BaseModel):
@@ -25,6 +28,17 @@ class JobStatusResponse(BaseModel):
     status: str  # "PENDING", "PROGRESS", "SUCCESS", "FAILURE"
     result: Optional[dict] = None
     error: Optional[str] = None
+
+
+redis_pool = redis.ConnectionPool(host="redis", port=6379, db=0, max_connections=10)
+
+
+def get_redis_client():
+    try:
+        return redis.Redis(connection_pool=redis_pool)
+    except RedisError as e:
+        logger.error(f"Redis connection error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database connection error")
 
 
 @app.post("/start_ranker_fit", response_model=JobStatusResponse)
@@ -51,42 +65,39 @@ async def start_ranker_predict(request: RankerPredictRequest):
     return JobStatusResponse(job_id=task.id, status=task.state)
 
 
-@app.get("/status/{job_id}", response_model=JobStatusResponse)
+@app.get("/job_result/{job_id}")
+async def get_job_result(job_id: str):
+    """Get the result of a completed ranking job"""
+
+    # Get task result from Celery
+    from celery.result import AsyncResult
+
+    task = AsyncResult(job_id, app=celery_app)
+
+    if task.state == "SUCCESS":
+        result = (
+            task.result
+        )  # JSON response (FastAPI automatically serializes the dict)
+        return {"status": "completed", "result": result}
+    elif task.state == "FAILURE":
+        return {"status": "failed", "error": str(task.info)}
+    else:
+        return {"status": task.state, "message": "Job still processing"}
+
+
+@app.get("/job_status/{job_id}")
 async def get_job_status(job_id: str):
-    """Get the status of a ranker job"""
+    """Check the status of a ranking job"""
+    from celery.result import AsyncResult
 
-    task = celery_app.AsyncResult(job_id)
+    task = AsyncResult(job_id, app=celery_app)
 
-    if task.state == "PENDING":
-        response = {
-            "job_id": job_id,
-            "status": task.state,
-            "result": None,
-            "error": None,
-        }
-    elif task.state == "PROGRESS":
-        response = {
-            "job_id": job_id,
-            "status": task.state,
-            "result": task.info,  # Progress info
-            "error": None,
-        }
-    elif task.state == "SUCCESS":
-        response = {
-            "job_id": job_id,
-            "status": task.state,
-            "result": task.result,
-            "error": None,
-        }
-    else:  # FAILURE
-        response = {
-            "job_id": job_id,
-            "status": task.state,
-            "result": None,
-            "error": str(task.info),  # Error message
-        }
-
-    return JobStatusResponse(**response)
+    return {
+        "job_id": job_id,
+        "status": task.state,
+        "current": task.info.get("current", 0) if task.info else 0,
+        "total": task.info.get("total", 100) if task.info else 100,
+    }
 
 
 @app.delete("/cancel/{job_id}")

@@ -7,7 +7,7 @@ case "$1" in
         cd /app/ranker && python api.py
         ;;
     "ranker_worker")
-        cd /app/ranker && celery -A celery_app worker --loglevel=info --concurrency=2 -Ofair
+        cd /app/ranker && celery -A celery_app worker --loglevel=info --concurrency=4 -Ofair -Q ranker
         ;;
     *)
         exec "$@"

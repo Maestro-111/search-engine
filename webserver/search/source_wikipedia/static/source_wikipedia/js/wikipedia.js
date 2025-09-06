@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         fetch(`${searchForm.action}?query=${encodeURIComponent(query)}&page=${page}`, {
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
             }
         })
         .then(response => response.json())

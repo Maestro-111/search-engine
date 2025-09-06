@@ -162,7 +162,7 @@ class DataPrep:
         ].apply(bin_scores)
         return df
 
-    def process_data(self):
+    def process_data_train(self):
 
         feature_cols = []
         target_col = ""
@@ -243,6 +243,77 @@ class DataPrep:
             self.save_metadata(train_df, feature_cols, artifacts_dir="artifacts")
 
             return train_df, test_df, feature_cols, target_col
+
+        except Exception as e:
+            self.logger.error(f"Error: {e}")
+            raise e
+
+    def process_data_predict(
+        self, df, vectorizer, metadata, user_persona, user_expertise
+    ):
+
+        feature_cols = []
+
+        try:
+
+            # ---- TEXT FEATURES ----
+
+            df["tfidf_sim"] = df.apply(
+                lambda row: self.compute_tfidf_sim(vectorizer, row), axis=1
+            )
+
+            feature_cols.append("tfidf_sim")
+
+            df["word_overlap"] = df.apply(
+                lambda row: self.word_overlap(row["query"], row["doc"]), axis=1
+            )
+
+            feature_cols.append("word_overlap")
+
+            df["jaccard_similarity"] = df.apply(
+                lambda row: self.jaccard_similarity(row["query"], row["doc"]), axis=1
+            )
+
+            feature_cols.append("jaccard_similarity")
+
+            # ---- USER FEATURES ----
+
+            if metadata and "persona_categories" in metadata:
+                persona_cats = metadata["persona_categories"]
+
+                if user_persona in persona_cats:
+                    df["persona_enc"] = persona_cats.index(user_persona)
+                else:
+                    self.logger.warning(
+                        f"Unknown persona '{user_persona}', using default value -1"
+                    )
+                    df["persona_enc"] = -1
+            else:
+                # Fallback: simple hash-based encoding
+                df["persona_enc"] = hash(user_persona) % 100
+                self.logger.warning(
+                    "No persona categories found in metadata, using hash encoding"
+                )
+
+            feature_cols.append("persona_enc")
+
+            # Handle expertise encoding
+            if metadata and "expertise_categories" in metadata:
+                # Use saved categories from training
+                expertise_cats = metadata["expertise_categories"]
+                if user_expertise in expertise_cats:
+                    df["expertise_enc"] = expertise_cats.index(user_expertise)
+                else:
+                    self.logger.warning(
+                        f"Unknown expertise '{user_expertise}', using default value -1"
+                    )
+                    df["expertise_enc"] = -1
+
+            feature_cols.append("expertise_enc")
+
+            self.logger.info(f"Feature cols: {feature_cols}")
+
+            return df[feature_cols]
 
         except Exception as e:
             self.logger.error(f"Error: {e}")

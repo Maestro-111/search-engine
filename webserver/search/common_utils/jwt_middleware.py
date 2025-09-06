@@ -1,12 +1,11 @@
 # jwt_middleware.py
 from django.http import JsonResponse
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from django.utils.deprecation import MiddlewareMixin
 from .jwt_utils import JWTUtils
 
 
 class JWTAuthenticationMiddleware(MiddlewareMixin):
-
     def process_request(self, request):
 
         skip_paths = [
@@ -19,15 +18,14 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         request_path = request.path.rstrip("/")
 
         if any(request_path == path for path in skip_paths):
-            return None
-
-        if not request.path.startswith("/auth/"):
+            request.user = AnonymousUser()
             return None
 
         auth_header = request.META.get("HTTP_AUTHORIZATION")
 
         if not auth_header:
-            return JsonResponse({"error": "Authorization header required"}, status=401)
+            request.user = AnonymousUser()
+            return None
 
         try:
             token = auth_header.split(" ")[1]
@@ -46,8 +44,8 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
 
         try:
             user = User.objects.get(id=payload["user_id"])
-            request.user = user
+            request.user = user  # ✅ real User, so `is_authenticated == True`
         except User.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=401)
+            request.user = AnonymousUser()
 
         return None

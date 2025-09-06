@@ -18,5 +18,9 @@ celery_app.conf.update(
     worker_prefetch_multiplier=0,
     task_acks_late=True,  # Acknowledge tasks after completion
     worker_disable_rate_limits=False,
-    include=["tasks"],
+    task_routes={
+        "ranker.tasks.*": {"queue": "ranker"},
+    },
+    # Auto-discover tasks in the tasks module
+    imports=["tasks"],
 )
