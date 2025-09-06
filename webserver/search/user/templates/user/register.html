@@ -22,8 +22,42 @@
         <input type="password" id="password" required>
     </div>
 
+    <div>
+        <label>Persona:</label>
+        <select id="persona" required>
+            <option value="">Select your persona</option>
+            <option value="developer">Developer</option>
+            <option value="data_scientist">Data Scientist</option>
+            <option value="business_analyst">Business Analyst</option>
+            <option value="researcher">Researcher</option>
+            <option value="student">Student</option>
+            <option value="hr">HR</option>
+            <option value="historian">Historian</option>
+            <option value="marketing">Marketing</option>
+            <option value="finance">Finance</option>
+            <option value="designer">Designer</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="educator">Educator</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Expertise Level:</label>
+        <select id="expertiseLevel" required>
+            <option value="">Select your expertise level</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="expert">Expert</option>
+        </select>
+    </div>
+
     <button type="submit">Register</button>
     <div id="message"></div>
+
+    <div class="form-links">
+        <p><a href="{% url 'menu:index' %}">Menu</a></p>
+    </div>
+
 </form>
 {% endblock %}
 

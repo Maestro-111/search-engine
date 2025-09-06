@@ -20,9 +20,11 @@ You can index existing data sources (whatever is available on the menu tab) or u
 
 We use LLM (gpt-4) to break down the request to search engine from user into entities and pass them to elastic client for more accurate mapping.
 
+**Ranker** rank elastic search response. Functionality is wrapped into a api (both re-training and model serving). Devcontainer is available as a development playground. (tbd)
+
 ## Auth
 
-**JWT**: Currently, we are testing/developing JWT based auth instead of django default sessions auth. User will be able to log in and see their personal profile. Tokens will be stored in the browser as this is not a real production app.
+**JWT**: JWT based auth instead of django default sessions auth. User will be able to log in and see their personal profile. Tokens will be stored in the browser as this is not a real production app.
 
 ## Set up with Docker
 
@@ -47,8 +49,9 @@ make prod build up
 ## TO DO:
 
 1) how to rank elastic response?
-    1) first elastic ranks by additional fields
-    2) then, use learn-to rank (collect user metadata like clicks) and train on top of that
+   1) commands to generate training data (cont) - more explicit entity construction
+   2) create a ranking module (data - features - train - server)
+      1) how to pass/receive documents (webserver <-> ranker)
 2) unit testing for django (webserver)
 3) CI (cont)
 4) Custom source for indexing (cont)
@@ -58,3 +61,6 @@ make prod build up
 8) dotabuff match simulator (cont)
 9) User JWT Auth mod (cont)
    1) Add nav links for auth/ resources
+   2) when making a request to any user specific view, pass the info in HTTP header
+10) add devcontainer setup for all modules
+

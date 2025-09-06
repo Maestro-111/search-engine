@@ -7,13 +7,12 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# Common libraries used everywhere
 pydantic = "^2.0.0"
 python-dotenv = "^1.0.0"
 loguru = "^0.7.0"
+colorlog = "^6.9.0"
 
 
-# crawler-specific dependencies
 [tool.poetry.group.crawler.dependencies]
 scrapy = "^2.12.0"
 beautifulsoup4 = "^4.12.0"
@@ -25,7 +24,6 @@ celery = "^5.5.2"
 redis = "^5.2.1"
 psutil = "^7.0.0"
 
-# indexer-specific dependencies
 [tool.poetry.group.indexer.dependencies]
 pymongo = "^4.12.0"
 sqlalchemy = "^2.0.0"
@@ -36,7 +34,6 @@ fastapi = "^0.103.0"
 uvicorn = "^0.23.0"
 psutil = "^7.0.0"
 
-# webserver-specific dependencies
 [tool.poetry.group.webserver.dependencies]
 fastapi = "^0.103.0"
 uvicorn = "^0.23.0"
@@ -50,8 +47,20 @@ psycopg2-binary = "^2.9.10"
 redis = "^5.2.1"
 openai = "^1.76.2"
 django_redis = "^5.4.0"
+faker = "37.4.0"
 
-# Development tools for local work
+
+[tool.poetry.group.ranker.dependencies]
+fastapi = "^0.103.0"
+uvicorn = "^0.23.0"
+psycopg2-binary = "^2.9.10"
+pandas = "^2.3.2"
+xgboost = "^3.0.4"
+scikit-learn = "^1.7.1"
+celery = "^5.5.2"
+redis = "^5.2.1"
+psutil = "^7.0.0"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 black = "^23.7.0"

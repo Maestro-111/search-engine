@@ -25,7 +25,6 @@ class JWTUtils:
             "type": "access",
         }
 
-        # Refresh token payload
         refresh_payload = {
             "user_id": user.id,
             "exp": refresh_exp,
@@ -33,7 +32,6 @@ class JWTUtils:
             "type": "refresh",
         }
 
-        # Generate tokens
         access_token = jwt.encode(access_payload, settings.JWT_KEY, algorithm="HS256")
         refresh_token = jwt.encode(refresh_payload, settings.JWT_KEY, algorithm="HS256")
 

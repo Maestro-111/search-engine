@@ -2,13 +2,12 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import WikipediaCrawlForm
-from .models import CrawlJob, IndexJob
-from common_utils.tasks import run_crawl_job
+from .models import CrawlJob, IndexJob, RankingJob
+from common_utils.tasks import run_crawl_job, run_ranking_predict_job, poll_for_result
 from .utils.elastic_wiki import WikipediaElastic
 import logging
 from django.core.cache import cache
 from django.http import JsonResponse
-
 
 logger = logging.getLogger("webserver")
 
@@ -29,19 +28,65 @@ def wiki_search(request):
 
     if query:
         cache_key = f"wiki_elasticsearch_results:{query}"
-        raw_results = cache.get(cache_key)
-        if raw_results is None:
+        documents = cache.get(cache_key)
+
+        if documents is None:
 
             prompt = es.generate_prompt_wiki(query)
             entities = es.extract_entities_with_openai(prompt)
             search_body = es.build_elasticsearch_query_wiki(entities)
 
-            raw_results = es.query_specified_fields(
+            raw_documents = es.query_specified_fields(
                 search_body=search_body, index="wikipedia"
             )
-            cache.set(cache_key, raw_results, 3600)
 
-        paginator = Paginator(raw_results, 10)
+            logger.info(f"raw documents: {raw_documents}")
+
+            if request.user.is_authenticated:
+                user_persona = getattr(request.user.profile, "persona", "")
+                user_expertise = getattr(request.user.profile, "expertise_level", "")
+
+                lst_of_doc_title = [doc.get("title", "") for doc in raw_documents]
+
+                rank_job = RankingJob.objects.create(
+                    user_persona=user_persona,
+                    user_expertise=user_expertise,
+                    query=query,
+                    documents=lst_of_doc_title,  # lst of str
+                )
+
+                logger.info(
+                    f"INFO TO RANK: "
+                    f"persona: {user_persona} expertise: {user_expertise} "
+                    f"query: {query} "
+                    f"documents: {lst_of_doc_title} "
+                )
+
+                logger.info(f"Created 1 job objects {rank_job}")
+
+                run_ranking_predict_job.delay(rank_job.id)
+
+                logger.info("Started RankingPredictJob task")
+
+                ranked_document_titles = poll_for_result(
+                    rank_job, raw_documents, timeout=20
+                )
+                documents = []
+
+                for d in ranked_document_titles:
+
+                    document_id = d["document_id"]
+                    documents.append(raw_documents[document_id])
+
+                logger.info(f"ranked document: {documents}")
+
+            else:
+                logger.warning("User is not authenticated, using unranked documents")
+                documents = raw_documents
+
+            cache.set(cache_key, documents, 3600)
+
+        paginator = Paginator(documents, 10)
         page_number = request.GET.get("page", 1)
         results = paginator.get_page(page_number)
 

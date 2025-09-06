@@ -2,9 +2,159 @@
 from celery import shared_task
 import requests
 import logging
-
+from datetime import datetime
+import time
+import json
 
 logger = logging.getLogger("webserver")
+
+
+def poll_for_result(rank_job, fallback_documents, timeout=20):
+    """Poll for ranking job completion by checking database"""
+    start_time = time.time()
+    poll_interval = 0.5  # Start with 0.5 seconds
+
+    while time.time() - start_time < timeout:
+        rank_job.refresh_from_db()
+
+        if rank_job.status == "completed" and rank_job.ranked_documents:
+            logger.info("Ranking completed successfully")
+            return rank_job.ranked_documents
+        elif rank_job.status == "failed":
+            logger.info(f"Ranking failed: {rank_job.error_message}")
+            return fallback_documents
+
+        # Exponential backoff
+        time.sleep(poll_interval)
+        poll_interval = min(poll_interval * 1.5, 5)  # Max 5 seconds
+
+    # Timeout - return unranked
+    logger.info("Ranking timed out, returning fallback documents")
+    return fallback_documents
+
+
+@shared_task
+def run_ranking_predict_job(ranking_request_id):
+    """Start a new ranking job and schedule status checking"""
+    from source_wikipedia.models import RankingJob
+
+    try:
+        ranking_request = RankingJob.objects.get(id=ranking_request_id)
+        ranking_request.status = "running"
+        ranking_request.save()
+
+        logger.info(f"Starting ranking job {ranking_request_id}")
+        json_documents = json.dumps(ranking_request.documents)
+
+        # Call the ranker API to start the job
+        response = requests.post(
+            "http://ranker:5000/start_ranker_predict",
+            json={
+                "user_persona": ranking_request.user_persona,
+                "user_expertise": ranking_request.user_expertise,
+                "query": ranking_request.query,
+                "documents": json_documents,  # Should be a json string, lst of str
+            },
+            timeout=30,
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            ranker_job_id = data["job_id"]
+
+            # Store the external job ID
+            ranking_request.external_job_id = ranker_job_id
+            ranking_request.save()
+
+            # Schedule a task to check the status
+            check_ranking_status.apply_async(
+                args=[ranking_request_id, ranker_job_id],
+                countdown=10,  # Wait 10 seconds before checking
+            )
+
+            return {"status": "started", "ranker_job_id": ranker_job_id}
+        else:
+            ranking_request.status = "failed"
+            ranking_request.error_message = (
+                f"Failed to start ranking: HTTP {response.status_code}"
+            )
+            ranking_request.save()
+            return {"status": "failed", "error": ranking_request.error_message}
+
+    except Exception as e:
+        logger.exception(f"Error starting ranking job {ranking_request_id}: {str(e)}")
+        try:
+            ranking_request = RankingJob.objects.get(id=ranking_request_id)
+            ranking_request.status = "failed"
+            ranking_request.error_message = str(e)
+            ranking_request.save()
+        except:
+            pass
+        return {"status": "failed", "error": str(e)}
+
+
+@shared_task
+def check_ranking_status(ranking_request_id, ranker_job_id):
+    """Check the status of a ranking job and fetch results if completed"""
+    from source_wikipedia.models import RankingJob
+
+    try:
+        # Check job status
+        response = requests.get(
+            f"http://ranker:5000/job_status/{ranker_job_id}", timeout=10
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+
+            # Update the job status in our database
+            ranking_request = RankingJob.objects.get(id=ranking_request_id)
+            ranking_request.status = data["status"]
+
+            if data["status"] == "SUCCESS" or data["status"] == "completed":
+
+                result_response = requests.get(
+                    f"http://ranker:5000/job_result/{ranker_job_id}", timeout=30
+                )
+
+                if result_response.status_code == 200:
+                    result_data = result_response.json()
+
+                    # Store the ranked documents
+                    ranking_request.status = "completed"
+                    ranking_request.ranked_documents = result_data.get(
+                        "result", {}
+                    ).get("ranked_documents", [])
+                    ranking_request.completed_at = datetime.now()
+                    ranking_request.save()
+
+                    logger.info(
+                        f"Ranking job {ranking_request_id} completed with {len(ranking_request.ranked_documents)} results"
+                    )
+                else:
+                    ranking_request.error_message = "Failed to fetch results"
+                    ranking_request.status = "failed"
+                    ranking_request.save()
+
+            elif data["status"] == "FAILURE" or data["status"] == "failed":
+                ranking_request.status = "failed"
+                ranking_request.error_message = data.get("error", "Unknown error")
+                ranking_request.save()
+
+            elif data["status"] in ["PENDING", "PROGRESS", "running"]:
+                # Still processing, check again later
+                ranking_request.save()
+                check_ranking_status.apply_async(
+                    args=[ranking_request_id, ranker_job_id],
+                    countdown=30,  # Check again in 30 seconds
+                )
+        else:
+            logger.error(f"Error checking ranking status: HTTP {response.status_code}")
+
+    except Exception as e:
+        logger.exception(
+            f"Error checking status for ranking job {ranking_request_id}: {str(e)}"
+        )
 
 
 @shared_task

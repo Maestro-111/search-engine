@@ -5,12 +5,35 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const username = document.getElementById('username').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const persona = document.getElementById('persona').value;
+    const expertiseLevel = document.getElementById('expertiseLevel').value;
+    const messageElement = document.getElementById('message');
+
+    messageElement.innerHTML = '';
+
+    // Validate form including new fields
+    const validationErrors = validateRegistrationForm(username, email, password, persona, expertiseLevel);
+
+    if (validationErrors.length > 0) {
+        // Show validation errors
+        const errorHtml = validationErrors.map(error =>
+            `<p style="color: red;">• ${error}</p>`
+        ).join('');
+        messageElement.innerHTML = errorHtml;
+        return;
+    }
 
     try {
         const response = await fetch('/auth/register/', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({username, email, password})
+            body: JSON.stringify({
+                username,
+                email,
+                password,
+                persona,
+                expertise_level: expertiseLevel
+            })
         });
 
         const data = await response.json();
@@ -34,3 +57,52 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             `<p style="color: red;">Error: ${error.message}</p>`;
     }
 });
+
+
+function validateRegistrationForm(username, email, password, persona, expertiseLevel) {
+    const errors = [];
+
+    // Username validation
+    if (!username || username.trim() === '') {
+        errors.push('Username is required');
+    } else if (username.length < 3) {
+        errors.push('Username must be at least 3 characters long');
+    } else if (username.length > 50) {
+        errors.push('Username must be less than 50 characters');
+    } else if (!/^[a-zA-Z0-9@._-]+$/.test(username)) {
+        errors.push('Username can only contain letters, numbers, @, ., _, and -');
+    }
+
+    // Email validation
+    if (!email || email.trim() === '') {
+        errors.push('Email is required');
+    } else if (!isValidEmail(email)) {
+        errors.push('Please enter a valid email address');
+    }
+
+    // Password validation
+    if (!password || password.trim() === '') {
+        errors.push('Password is required');
+    } else if (password.length < 6) {
+        errors.push('Password must be at least 6 characters long');
+    } else if (password.length > 128) {
+        errors.push('Password must be less than 128 characters');
+    }
+
+    // Persona validation
+    if (!persona || persona.trim() === '') {
+        errors.push('Please select a persona');
+    }
+
+    // Expertise level validation
+    if (!expertiseLevel || expertiseLevel.trim() === '') {
+        errors.push('Please select an expertise level');
+    }
+
+    return errors;
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}

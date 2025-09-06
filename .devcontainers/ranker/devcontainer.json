@@ -1,0 +1,23 @@
+{
+  "name": "Ranker",
+  "dockerComposeFile": [
+    "../../docker-compose.dev.yml"
+  ],
+  "service": "ranker",
+  "workspaceFolder": "/app",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "batisteo.vscode-django",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ]
+}
